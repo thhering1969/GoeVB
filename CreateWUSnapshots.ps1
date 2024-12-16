@@ -1,7 +1,7 @@
 # Variablen definieren
 $vCenterServer = "vc2.firma.local"
 $username = 'administrator@vsphere.local'
-$password = 'f34150A012,#'
+$password = 'ff'
 $currentTime = Get-Date -Format "yyyy-MM-dd_HH-mm-ss"
 $snapshotDescription = "Snapshot vom $(Get-Date -Format 'dd.MM.yyyy')"
 
