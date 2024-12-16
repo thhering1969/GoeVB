@@ -1,7 +1,7 @@
 # Variablen definieren
 $vCenterServer = "vc2.firma.local"
 $username = 'administrator@vsphere.local'
-$password = 'ff'
+$password = 'f34150A012,#'
 $currentTime = Get-Date -Format "yyyy-MM-dd_HH-mm-ss"
 $snapshotDescription = "Snapshot vom $(Get-Date -Format 'dd.MM.yyyy')"
 
@@ -138,14 +138,11 @@ Write-Host "Snapshot-Erstellungsstatus: $status"
 
 # Nur fortfahren, wenn der Snapshot erfolgreich war
 if ($status -eq "Success") {
-    # Hier kannst du weitere Schritte, wie das Installieren von Windows-Updates, hinzufügen
-    Write-Host "Installiere Windows-Updates..."
-    # Dein Code zum Installieren von Windows-Updates hier
     # Status zurück an Zabbix senden
-    $updateStatus = "Update erfolgreich"
+    $updateStatus = "Snapshot erfolgreich erstellt"
     $zabbixHost = (Get-ComputerInfo -Property HostName).HostName
     Zabbix-Sender -Status $updateStatus
 } else {
-    Write-Host "Snapshot-Erstellung fehlgeschlagen, keine Windows-Updates installiert."
+    Write-Host "Snapshot-Erstellung fehlgeschlagen."
 }
 Write-Host "Skript abgeschlossen."
