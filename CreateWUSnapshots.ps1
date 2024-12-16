@@ -9,6 +9,9 @@ $snapshotDescription = "Snapshot vom $(Get-Date -Format 'dd.MM.yyyy')"
 $zabbixServer = "192.168.20.32" # IP-Adresse des Zabbix-Servers
 $zabbixKeySnapshot = "vSphere.Snapshot.Status" # Zabbix-Item-Key für Snapshot-Status
 
+# Testkonfiguration (setze dies auskommentiert, um mit mehreren VMs zu arbeiten)
+$testSingleVMName = "" # Setze den VM-Name hier, um nur diesen zu testen. Ansonsten lass leer, um alle VMs zu verwenden.
+
 # Funktion: PowerCLI-Modul prüfen und installieren
 function Check-And-Install-PowerCLI {
     Write-Host "Prüfe, ob VMware.PowerCLI installiert ist..."
@@ -54,15 +57,15 @@ function Create-Snapshot {
                 @{N="Running OS";E={$_.Guest.GuestFullName}},
                 @{N="IP Address";E={@($_.Guest.IpAddress)}}
 
-        # Windows-VMs filtern
-        $windowsVMs = $vms | Where-Object { $_."Running OS" -match "Microsoft Windows" }
-
-        if ($windowsVMs.Count -eq 0) {
-            Write-Error "Keine Windows-VMs gefunden."
-            return "Failed"
+        # Wenn nur ein spezieller VM-Name gesetzt ist, läuft der Snapshot-Prozess nur für diesen VM
+        if ($testSingleVMName) {
+            $vms = $vms | Where-Object { $_.Name -eq $testSingleVMName }
+        } else {
+            # Nur Windows-VMs, wenn kein spezieller Name gesetzt ist
+            $vms = $vms | Where-Object { $_."Running OS" -match "Microsoft Windows" }
         }
 
-        foreach ($vm in $windowsVMs) {
+        foreach ($vm in $vms) {
             $vmName = $vm.Name
             # Kürze den Snapshot-Namen weiter
             $snapshotName = "$($vmName.Substring(0, [Math]::Min($vmName.Length, 10)))-WUpdate-$currentTime"
