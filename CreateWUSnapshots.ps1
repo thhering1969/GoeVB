@@ -80,7 +80,15 @@ function Create-Snapshot {
 
             # Zabbix-Sender verwenden, dynamisch basierend auf VM-Name
             $zabbixHost = $vmName
-            Zabbix-Sender -Status $status
+           if ($status -eq "Success") {
+              # Status zurück an Zabbix senden
+                $updateStatus = "Snapshot erfolgreich erstellt"
+    
+               
+             		} else {
+    		Write-Host "Snapshot-Erstellung fehlgeschlagen."
+   			 }
+           Zabbix-Sender -Status $updateStatus 
         }
 
         return $status
@@ -113,8 +121,13 @@ function Zabbix-Sender {
     }
 
     # Sende Daten an den Zabbix-Server
+    
+    
+  
     $command = "$zabbixSenderPath -z $zabbixServer -s $zabbixHost -k $zabbixKeySnapshot -o '$Status ($currentTime)'"
     Write-Host "Sende Daten an Zabbix: $command"
+    
+
     try {
         & $zabbixSenderPath -z $zabbixServer -s $zabbixHost -k $zabbixKeySnapshot -o "$Status ($currentTime)"
         Write-Host "Daten erfolgreich an Zabbix gesendet: Status='$Status'."
@@ -131,12 +144,5 @@ $status = Create-Snapshot
 Write-Host "Snapshot-Erstellungsstatus: $status"
 
 # Nur fortfahren, wenn der Snapshot erfolgreich war
-if ($status -eq "Success") {
-    # Status zurück an Zabbix senden
-    $updateStatus = "Snapshot erfolgreich erstellt"
-    $zabbixHost = (Get-ComputerInfo -Property HostName).HostName
-    Zabbix-Sender -Status $updateStatus
-} else {
-    Write-Host "Snapshot-Erstellung fehlgeschlagen."
-}
+
 Write-Host "Skript abgeschlossen."
