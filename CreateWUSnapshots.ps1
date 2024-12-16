@@ -1,7 +1,7 @@
 # Variablen definieren
-$vCenterServer = "vc1.mgmt.lan"
+$vCenterServer = "vc3.mgmt.lan"
 $username = 'administrator@vsphere.local'
-$password = 'ff'
+$password = 'ff' 
 $currentTime = Get-Date -Format "yyyy-MM-dd_HH-mm-ss"
 $snapshotDescription = "Snapshot vom $(Get-Date -Format 'dd.MM.yyyy')"
 
@@ -10,7 +10,7 @@ $zabbixServer = "192.168.116.114" # IP-Adresse des Zabbix-Servers
 $zabbixKeySnapshot = "vSphere.Snapshot.Status" # Zabbix-Item-Key für Snapshot-Status
 
 # Testkonfiguration (setze dies auskommentiert, um mit mehreren VMs zu arbeiten)
-$testSingleVMName = "" # Setze den VM-Name hier, um nur diesen zu testen. Ansonsten lass leer, um alle VMs zu verwenden.
+$testSingleVMName = "VMWSUSDB" # Setze den VM-Name hier, um nur diesen zu testen. Ansonsten lass leer, um alle VMs zu verwenden.
 
 # Funktion: PowerCLI-Modul prüfen und installieren
 function Check-And-Install-PowerCLI {
@@ -101,23 +101,15 @@ function Zabbix-Sender {
     )
 
     # Pfad zum zabbix_sender ermitteln
-    $zabbixSenderPath = (Get-Command -Name zabbix_sender -ErrorAction SilentlyContinue).Source
-    if (-not $zabbixSenderPath) {
-        # Fallback: Servicepfad ermitteln
-        try {
-            $servicePath = Get-WmiObject -Class Win32_Service -Filter "Name='Zabbix Agent 2'" | Select-Object -ExpandProperty PathName
-            if ($servicePath -match "-c\s+""([^""]+)""") {
-                $configFilePath = $matches[1]
-                $zabbixSenderPath = Join-Path -Path ($configFilePath -replace "\\[^\\]+$", "") -ChildPath "zabbix_sender.exe"
-                Write-Host "Zabbix-Sender wurde aus dem Agent-Service-Pfad ermittelt: $zabbixSenderPath"
-            } else {
-                Write-Error "Fehler beim Ermitteln des Servicepfads für Zabbix-Agent: Der Pfad konnte nicht extrahiert werden."
-                exit 1
-            }
-        } catch {
-            Write-Error "Fehler beim Ermitteln des Servicepfads für Zabbix-Agent: $_"
-            exit 1
-        }
+    $servicePath = Get-WmiObject -Class Win32_Service -Filter "Name='Zabbix Agent 2'" | Select-Object -ExpandProperty PathName
+    if ($servicePath -match "zabbix_agent2.exe") {
+        # Entfernen von `zabbix_agent2.exe` und allem danach
+        $zabbixSenderPath = ($servicePath -replace "zabbix_agent2.exe\s+.*", "") + "zabbix_sender.exe"
+         $zabbixSenderPath
+         
+    } else {
+        Write-Error "Fehler beim Ermitteln des Servicepfads für Zabbix-Agent: Der Pfad konnte nicht extrahiert werden."
+        exit 1
     }
 
     # Sende Daten an den Zabbix-Server
