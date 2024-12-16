@@ -1,14 +1,13 @@
 # Variablen definieren
 $vCenterServer = "vc2.firma.local"
 $username = 'administrator@vsphere.local'
-$password = 'f34150A012,#'
+$password = 'ff'
 $currentTime = Get-Date -Format "yyyy-MM-dd_HH-mm-ss"
 $snapshotDescription = "Snapshot vom $(Get-Date -Format 'dd.MM.yyyy')"
 
 # Zabbix-Variablen
 $zabbixServer = "192.168.20.32" # IP-Adresse des Zabbix-Servers
 $zabbixKeySnapshot = "vSphere.Snapshot.Status" # Zabbix-Item-Key für Snapshot-Status
-$zabbixKeyInstallStatus = "vSphere.WindowsUpdate.Status" # Zabbix-Item-Key für Windows Update-Status
 
 # Funktion: PowerCLI-Modul prüfen und installieren
 function Check-And-Install-PowerCLI {
