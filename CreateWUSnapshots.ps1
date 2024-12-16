@@ -99,13 +99,13 @@ function Zabbix-Sender {
     param (
         [string]$Status
     )
-
+    $currentTime = Get-Date -Format "dd.MM.yy-HH:mm"
     # Pfad zum zabbix_sender ermitteln
     $servicePath = Get-WmiObject -Class Win32_Service -Filter "Name='Zabbix Agent 2'" | Select-Object -ExpandProperty PathName
     if ($servicePath -match "zabbix_agent2.exe") {
         # Entfernen von `zabbix_agent2.exe` und allem danach
         $zabbixSenderPath = ($servicePath -replace "zabbix_agent2.exe\s+.*", "") + "zabbix_sender.exe"
-         $zabbixSenderPath
+        $zabbixSenderPath
          
     } else {
         Write-Error "Fehler beim Ermitteln des Servicepfads für Zabbix-Agent: Der Pfad konnte nicht extrahiert werden."
@@ -113,10 +113,10 @@ function Zabbix-Sender {
     }
 
     # Sende Daten an den Zabbix-Server
-    $command = "$zabbixSenderPath -z $zabbixServer -s $zabbixHost -k $zabbixKeySnapshot -o $Status"
+    $command = "$zabbixSenderPath -z $zabbixServer -s $zabbixHost -k $zabbixKeySnapshot -o '$Status ($currentTime)'"
     Write-Host "Sende Daten an Zabbix: $command"
     try {
-        & $zabbixSenderPath -z $zabbixServer -s $zabbixHost -k $zabbixKeySnapshot -o $Status
+        & $zabbixSenderPath -z $zabbixServer -s $zabbixHost -k $zabbixKeySnapshot -o "$Status ($currentTime)"
         Write-Host "Daten erfolgreich an Zabbix gesendet: Status='$Status'."
     } catch {
         Write-Error "Fehler beim Senden von Daten an Zabbix: $_"
