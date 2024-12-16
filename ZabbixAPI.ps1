@@ -5,11 +5,12 @@ $apiToken = "b910b5ad64ac886ed834e88cb71de707fd6b1e31b5df63fc542e4ed2eb801be4" #
 # URL zur Zabbix-API mit Port
 $zabbixApiUrl = "http://$($zabbixServer):8080/api_jsonrpc.php"
 
-# Funktion: Status des Trapper-Items abfragen
+# Funktion: Status des Trapper-Items abfragen und max Alter des Snapshots prüfen
 function Get-ZabbixTrapperStatus {
     param (
         [string]$hostName,     # Zabbix-Host
-        [string]$itemKey      # Zabbix-Item-Schlüssel
+        [string]$itemKey,      # Zabbix-Item-Schlüssel
+        [int]$maxAgeInHours = 12 # Maximaler Alterswert in Stunden für den Snapshot
     )
     
     # Zabbix API Payload für die Anfrage
@@ -35,6 +36,21 @@ function Get-ZabbixTrapperStatus {
         } else {
             $status = $response.result[0].lastvalue
             Write-Host "Letzter erfolgreicher Snapshot: $status"
+
+            # Prüfung des Alters des Snapshots
+            if ($null -ne $response.result[0].lastclock) {
+                $snapshotTimestamp = [datetime]::FromFileTimeUtc($response.result[0].lastclock)
+                $currentTimestamp = [datetime]::UtcNow
+                $age = ($currentTimestamp - $snapshotTimestamp).TotalHours
+
+                if ($age > $maxAgeInHours) {
+                    Write-Host "Der Snapshot ist älter als $maxAgeInHours Stunden. Zeit zum Handeln!"
+                } else {
+                    Write-Host "Der Snapshot ist noch nicht älter als $maxAgeInHours Stunden."
+                }
+            } else {
+                Write-Host "Kein gültiges Datum für den Snapshot gefunden."
+            }
         }
     } catch {
         Write-Error "Fehler beim Aufrufen der Zabbix-API: $_"
