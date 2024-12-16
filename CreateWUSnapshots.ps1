@@ -1,4 +1,4 @@
- Variablen definieren
+# Variablen definieren
 $vCenterServer = "vc2.firma.local"
 $username = 'administrator@vsphere.local'
 $password = 'ff'
@@ -7,8 +7,8 @@ $snapshotDescription = "Snapshot vom $(Get-Date -Format 'dd.MM.yyyy')"
 
 # Zabbix-Variablen
 $zabbixServer = "192.168.20.32" # IP-Adresse des Zabbix-Servers
-$zabbixHost = "vSphere-Snapshots" # Hostname im Zabbix-Frontend
-$key = "vSphere.Snapshot.Status" # Zabbix-Item-Key
+$zabbixKeySnapshot = "vSphere.Snapshot.Status" # Zabbix-Item-Key für Snapshot-Status
+$zabbixKeyInstallStatus = "vSphere.WindowsUpdate.Status" # Zabbix-Item-Key für Windows Update-Status
 
 # Funktion: PowerCLI-Modul prüfen und installieren
 function Check-And-Install-PowerCLI {
@@ -72,9 +72,16 @@ function Create-Snapshot {
             Write-Host "Erstelle Snapshot '$snapshotName' für VM '$vmName'..."
             New-Snapshot -VM (Get-VM -Name $vmName) -Name $snapshotName -Description $snapshotDescription
             Write-Host "Snapshot für VM '$vmName' erfolgreich erstellt."
+
+            # Überprüfe, ob der Snapshot erfolgreich war
+            $status = "Success"
+
+            # Zabbix-Sender verwenden, dynamisch basierend auf VM-Name
+            $zabbixHost = $vmName
+            Zabbix-Sender -Status $status
         }
 
-        return "Success"
+        return $status
     } catch {
         Write-Error "Fehler beim Erstellen der Snapshots: $_"
         return "Failed"
@@ -90,9 +97,8 @@ function Zabbix-Sender {
     param (
         [string]$Status
     )
-    Write-Host "Versuche, den Pfad für 'zabbix_sender' dynamisch zu ermitteln..."
 
-    # Dynamischer Pfad zu 'zabbix_sender' ermitteln
+    # Pfad zum zabbix_sender ermitteln
     $zabbixSenderPath = (Get-Command -Name zabbix_sender -ErrorAction SilentlyContinue).Source
     if (-not $zabbixSenderPath) {
         # Fallback: Servicepfad ermitteln
@@ -112,22 +118,14 @@ function Zabbix-Sender {
         }
     }
 
-    # Pfad zum zabbix_sender korrigiert verwenden
-    $zabbixSenderPath = $zabbixSenderPath.TrimEnd('\')
-
     # Sende Daten an den Zabbix-Server
-    if (Test-Path $zabbixSenderPath) {
-        $command = "$zabbixSenderPath -z $zabbixServer -s $zabbixHost -k $key -o $Status"
-        Write-Host "Sende Daten an Zabbix: $command"
-        try {
-            & $zabbixSenderPath -z $zabbixServer -s $zabbixHost -k $key -o $Status
-            Write-Host "Daten erfolgreich an Zabbix gesendet: Status='$Status'."
-        } catch {
-            Write-Error "Fehler beim Senden von Daten an Zabbix: $_"
-        }
-    } else {
-        Write-Error "zabbix_sender konnte weder über den Systempfad noch über den Agent-Service gefunden werden."
-        exit 1
+    $command = "$zabbixSenderPath -z $zabbixServer -s $zabbixHost -k $zabbixKeySnapshot -o $Status"
+    Write-Host "Sende Daten an Zabbix: $command"
+    try {
+        & $zabbixSenderPath -z $zabbixServer -s $zabbixHost -k $zabbixKeySnapshot -o $Status
+        Write-Host "Daten erfolgreich an Zabbix gesendet: Status='$Status'."
+    } catch {
+        Write-Error "Fehler beim Senden von Daten an Zabbix: $_"
     }
 }
 
@@ -136,5 +134,18 @@ Write-Host "Starte Snapshot-Erstellung..."
 Check-And-Install-PowerCLI
 Import-PowerCLI
 $status = Create-Snapshot
-Zabbix-Sender -Status $status
+Write-Host "Snapshot-Erstellungsstatus: $status"
+
+# Nur fortfahren, wenn der Snapshot erfolgreich war
+if ($status -eq "Success") {
+    # Hier kannst du weitere Schritte, wie das Installieren von Windows-Updates, hinzufügen
+    Write-Host "Installiere Windows-Updates..."
+    # Dein Code zum Installieren von Windows-Updates hier
+    # Status zurück an Zabbix senden
+    $updateStatus = "Update erfolgreich"
+    $zabbixHost = (Get-ComputerInfo -Property HostName).HostName
+    Zabbix-Sender -Status $updateStatus
+} else {
+    Write-Host "Snapshot-Erstellung fehlgeschlagen, keine Windows-Updates installiert."
+}
 Write-Host "Skript abgeschlossen."
