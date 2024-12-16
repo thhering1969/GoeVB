@@ -15,10 +15,11 @@ function Get-ZabbixPath {
     if (-not $zabbixGetPath) {
         try {
             $servicePath = Get-WmiObject -Class Win32_Service -Filter "Name='Zabbix Agent 2'" | Select-Object -ExpandProperty PathName
-            if ($servicePath -match "-c\s+""([^""]+)""") {
-                $configFilePath = $matches[1]
-                $zabbixGetPath = Join-Path -Path ($configFilePath -replace "\\[^\\]+$", "") -ChildPath "zabbix_get.exe"
-                $zabbixSenderPath = Join-Path -Path ($configFilePath -replace "\\[^\\]+$", "") -ChildPath "zabbix_sender.exe"
+            if ($servicePath -match "zabbix_agent2.exe") {
+                # Entfernen von `zabbix_agent2.exe` und allem danach
+                $configFilePath = ($servicePath -replace "zabbix_agent2.exe\s+.*", "")
+                $zabbixGetPath = Join-Path -Path $configFilePath -ChildPath "zabbix_get.exe"
+                $zabbixSenderPath = Join-Path -Path $configFilePath -ChildPath "zabbix_sender.exe"
                 Write-Host "Pfad zu zabbix_get: $zabbixGetPath"
                 Write-Host "Pfad zu zabbix_sender: $zabbixSenderPath"
             } else {
@@ -32,13 +33,18 @@ function Get-ZabbixPath {
     }
 
     # Prüfen, ob die ermittelten Pfade existieren
-    if (Test-Path $zabbixGetPath -and Test-Path $zabbixSenderPath) {
-        Write-Host "Pfad zu zabbix_get und zabbix_sender gefunden."
-        return $zabbixGetPath, $zabbixSenderPath
-    } else {
-        Write-Error "zabbix_get oder zabbix_sender konnten weder über den Systempfad noch über den Agent-Service gefunden werden."
+    if (-not $zabbixGetPath) {
+        Write-Error "zabbix_get Pfad konnte nicht ermittelt werden."
         return $null
     }
+
+    if (-not $zabbixSenderPath) {
+        Write-Error "zabbix_sender Pfad konnte nicht ermittelt werden."
+        return $null
+    }
+
+    Write-Host "Pfad zu zabbix_get und zabbix_sender gefunden."
+    return $zabbixGetPath, $zabbixSenderPath
 }
 
 # Funktion: Erfolgreichen Snapshot prüfen
@@ -76,6 +82,13 @@ function Zabbix-Sender {
     param (
         [string]$Status
     )
+
+    # Pfad zu zabbix_sender ermitteln
+    ($zabbixGetPath, $zabbixSenderPath) = Get-ZabbixPath
+    if (-not $zabbixSenderPath) {
+        Write-Error "zabbix_sender Pfad konnte nicht ermittelt werden."
+        return
+    }
 
     # Sende Daten an den Zabbix-Server
     $command = "$zabbixSenderPath -z $zabbixServer -s $zabbixHost -k $zabbixKeySnapshot -o $Status"
