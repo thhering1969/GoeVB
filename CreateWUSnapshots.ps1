@@ -1,5 +1,5 @@
 # Variablen definieren
-$vCenterServer = "vc2.firma.local"
+$vCenterServer = "vc1.mgmt.lan"
 $username = 'administrator@vsphere.local'
 $password = 'ff'
 $currentTime = Get-Date -Format "yyyy-MM-dd_HH-mm-ss"
