@@ -1,12 +1,12 @@
 # Variablen definieren
 $vCenterServer = "vc1.mgmt.lan"
 $username = 'administrator@vsphere.local'
-$password = 'ff'
+$password = 'GoeVB2020,'
 $currentTime = Get-Date -Format "yyyy-MM-dd_HH-mm-ss"
 $snapshotDescription = "Snapshot vom $(Get-Date -Format 'dd.MM.yyyy')"
 
 # Zabbix-Variablen
-$zabbixServer = "192.168.20.32" # IP-Adresse des Zabbix-Servers
+$zabbixServer = "192.168.116.114" # IP-Adresse des Zabbix-Servers
 $zabbixKeySnapshot = "vSphere.Snapshot.Status" # Zabbix-Item-Key für Snapshot-Status
 
 # Testkonfiguration (setze dies auskommentiert, um mit mehreren VMs zu arbeiten)
