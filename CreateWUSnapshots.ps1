@@ -1,3 +1,4 @@
+# /usr/share/powershell/CreateWUSnapshots.ps1 auf Zabbix-Server
 # Variablen definieren
 $vCenterServer = "vc3.mgmt.lan"
 $username = 'administrator@vsphere.local'
