@@ -161,26 +161,33 @@ function Create-Snapshot {
 
     # Verbindung zu vCenter herstellen
     try {
-        Connect-VIServer -Server `$vCenterServer -User `$username -Password `$password -ErrorAction Stop
+        Connect-VIServer -Server `$vCenterServer -User `$username -Password `$password -ErrorAction Stop | out-null
     } catch {
-        Write-Host "Fehler bei der Verbindung zu vCenter\: `$vCenterServer"
+        Write-Host "Fehler bei der Verbindung zu vCenter: `$(`$vCenterServer)"
+       
         return `$false
     }
 
-    # Überprüfen, ob die VM existiert
+    # Überprüfen, ob die VM existiert und eingeschaltet ist
     try {
-        `$vm = Get-VM -Name `$vmName -ErrorAction Stop
-        if (`$vm) {
+        `$vm = Get-VM -Name `$vmName -ErrorAction SilentlyContinue
+        if (`$vm -and `$vm.PowerState -eq 'PoweredOn') {
             # Snapshot erstellen
-            New-Snapshot -VM `$vm -Name "Phase $phase `$(Get-Date -Format 'dd.MM.yyyy HH:mm')" -Description `$snapshotDescription
+            New-Snapshot -VM `$vm -Name "Phase $phase `$(Get-Date -Format 'dd.MM.yyyy HH:mm')" -Description `$snapshotDescription | out-null
             Write-Host "Snapshot erfolgreich für VM `$vmName auf `$vCenterServer."
+            
             return `$true
+        } elseif (`$vm) {
+            Write-Host "VM `$vmName ist nicht eingeschaltet. Kein Snapshot erstellt."
+           
+            return `$false
         } else {
             Write-Host "VM `$vmName wurde auf `$vCenterServer nicht gefunden. Kein Snapshot erstellt."
+            
             return `$false
         }
     } catch {
-        Write-Host "Fehler beim Erstellen des Snapshots für VM `$vmName auf `$vCenterServer\: `$(`$_.Exception.Message)"
+        Write-Host "Fehler beim Erstellen des Snapshots für VM `$vmName auf `$(`$vCenterServer): `$(`$_.Exception.Message)"   
         return `$false
     }
 }
