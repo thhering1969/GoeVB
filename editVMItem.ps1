@@ -185,7 +185,7 @@ Write-Host "Verwendete Interface-ID: $interfaceId"
 # Zabbix-Item erstellen
 $itemName = "Execute PowerShell Test"
 # Achte darauf, dass der system.run-Befehl korrekt formatiert ist
-$itemKey = "system.run[powershell -NoProfile -Command 'Write-Host ""test""']"
+$itemKey = "system.run[powershell -NoProfile -Command Write-Host ""test""]"
 $delay = "0;md8-14wd3h9m15"
 $timeout = 30
 $history = 3600
