@@ -21,6 +21,45 @@ $serviceName = "Zabbix Agent 2"
 $zabbix_server = "192.168.116.114"  # IP-Adresse des Zabbix-Servers
 $zabbix_key = "windows.updates.sender"  # Trapper Key im Zabbix
 
+$apiToken = "b910b5ad64ac886ed834e88cb71de707fd6b1e31b5df63fc542e4ed2eb801be4"  # API Token
+$zabbixApiUrl = "http://$($zabbix_server):8080/api_jsonrpc.php"
+
+# Header für die Anfrage
+$headers = @{
+    "Authorization" = "Bearer $apiToken"
+    "Content-Type"  = "application/json"
+}
+
+# Hostname des Hosts, dessen HostID ermittelt werden soll
+$zabbixHost = (Get-WmiObject Win32_ComputerSystem).Name
+#$zabbixHost = "52978c9f-f06b-845d-d42e-c4422b7698ab"
+
+# Funktion: Zabbix HostID anhand des Hostnamens ermitteln
+function Get-ZabbixHost {
+    param (
+        [string]$hostName
+    )
+    
+    $body = @{
+        jsonrpc = "2.0"
+        method  = "host.get"
+        params  = @{ filter = @{ name = $hostName } }
+        id      = 1
+    }
+
+    try {
+        $response = Invoke-RestMethod -Uri $zabbixApiUrl -Method Post -Body ($body | ConvertTo-Json -Depth 10) -Headers $headers
+        if ($response.result) {
+            return $response.result[0].host
+            Write-Error "Kein Host mit dem Namen '$hostName' gefunden."
+            return $null
+        }
+    } catch {
+        Write-Error "Fehler beim Holen des Zabbix-Hosts: $_" 
+        return $null
+    }
+}
+
 # Schritt 1: Überprüfen, ob das PSWindowsUpdate-Modul bereits installiert ist
 Write-Host "$([char]0x00DC)berpr$([char]0x00FC)fe, ob das PSWindowsUpdate-Modul bereits installiert ist..."
 if (Test-Path -Path $moduleDestinationPath) {
@@ -115,7 +154,9 @@ if ($servicePath -match "-c\s+""([^""]+)""") {
 }
 
 # Hostname aus der Zabbix-Agent-Konfigurationsdatei extrahieren
-$zabbix_host = (Select-String -Path $zabbix_config_path -Pattern '^Hostname=').Line.Split('=')[1].Trim()
+#$zabbix_host = (Select-String -Path $zabbix_config_path -Pattern '^Hostname=').Line.Split('=')[1].Trim()
+$zabbix_host = Get-ZabbixHost -hostName $zabbixHost
+
 
 # Windows-Updates abrufen
 try {
