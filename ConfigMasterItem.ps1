@@ -78,7 +78,7 @@ function Update-ZabbixItem {
         [string]$itemId,        # Item-ID, die aktualisiert werden soll
         [string]$itemName,      # Neuer Item-Name
         [string]$newScriptPath, # Pfad zum neuen Skript
-                $delay =  "0;md8-14wd3h9" ,       # Delay in Sekunden (Standardwert: 60)
+                $delay =  "0;md9-15wd3h9" ,       # Delay in Sekunden (Standardwert: 60)
         [int]$timeout = 30,     # Timeout in Sekunden (Standardwert: 30)
         [int]$history = 3600,     
         [int]$trends = 0,      # Trends in Tagen (Standardwert: 180)
