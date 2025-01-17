@@ -159,6 +159,7 @@ function Create-SnapshotScripts {
             # Speichern des Skripts für die jeweilige Phase
             $snapshotScriptPath = "/usr/share/powershell/CreateSnapshot_Phase$phase.ps1"
             $scriptContent | Set-Content -Path $snapshotScriptPath
+	    chmod +x $snapshotScriptPath
             Write-Host "Snapshot-Skript für Phase $($phase) gespeichert unter: $snapshotScriptPath"
         }
     }
