@@ -1,9 +1,6 @@
 # Startzeit des Skripts
 $scriptStartTime = Get-Date
 
-Set-PowerCLIConfiguration -DefaultVIServerMode Multiple -Scope User  -Confirm:$false | out-null
-
-
 
 
 # VMware-Verbindungsdaten
@@ -14,59 +11,39 @@ $vmlist={vmNamesList}
 $BypassWednesdayCheck = {BypassWednesdayCheck}  # Wird durch den Wert von BypassWednesdayCheck ersetzt
 
 
-
 # VMware-Verbindungsdaten
 
 $currentTime = Get-Date -Format 'yyyy-MM-dd_HH-mm-ss'
 $snapshotDescription = "Snapshot vom $(Get-Date -Format 'dd.MM.yyyy')"
 
+# Setzen der Variable BypassWednesdayCheck
+$BypassWednesdayCheck = $True  # Wird durch den Wert von BypassWednesdayCheck ersetzt
+
 # Zabbix API Details
 $zabbixServer = "192.168.116.114"
 $apiToken = "b910b5ad64ac886ed834e88cb71de707fd6b1e31b5df63fc542e4ed2eb801be4"  # API Token
 $zabbixApiUrl = "http://$($zabbixServer):8080/api_jsonrpc.php"
-# Header fï¿½r die Anfrage
+# Header für die Anfrage
 $headers = @{
     "Authorization" = "Bearer $apiToken"
     "Content-Type"  = "application/json"
 }
 
 
-function Is-Wednesday-After-Second-Tuesday {
-    $currentDate = Get-Date
-    $dayOfWeek = $currentDate.DayOfWeek
-    $isWednesday = ($dayOfWeek -eq 'Wednesday')
 
-    #Write-Host "Aktuelles Datum: $currentDate"
-    #Write-Host "Ist heute Mittwoch? $isWednesday"
-    #Write-Host "BypassWednesdayCheck: $BypassWednesdayCheck"
 
-    # Falls es Mittwoch ist und Bypass nicht gesetzt ist
-    if ($isWednesday -and -not $BypassWednesdayCheck) {
-        $currentMonth = $currentDate.Month
-        $currentYear = $currentDate.Year
-
-        # Berechnen des zweiten Dienstags
-        $secondTuesday = (1..31 | Where-Object {
-            $date = Get-Date -Month $currentMonth -Year $currentYear -Day $_
-            $date.DayOfWeek -eq 'Tuesday'
-        }) | Select-Object -First 2 | Select-Object -Last 1
-
-        # Sicherstellen, dass der zweite Dienstag gefunden wurde
-        if ($secondTuesday -eq $null) {
-            Write-Host "Kein zweiter Dienstag im Monat gefunden."
-            return $false
-        }
-
-        # Berechnen des Mittwochs nach dem zweiten Dienstag
-        $wednesdayAfterSecondTuesday = (Get-Date -Month $currentMonth -Year $currentYear -Day $secondTuesday).AddDays(1)
-
-        #Write-Host "Mittwoch nach dem zweiten Dienstag des Monats: $wednesdayAfterSecondTuesday"
-
-        # ï¿½berprï¿½fen, ob heute dieser Mittwoch ist
-        return ($currentDate.Date -eq $wednesdayAfterSecondTuesday.Date)
+# Überprüfen, ob der Snapshot erstellt werden soll (wenn Mittwoch nach dem zweiten Dienstag oder Bypass aktiv ist)
+if ((Is-Wednesday-After-Second-Tuesday) -or $BypassWednesdayCheck) {
+    if (Is-Wednesday-After-Second-Tuesday) {
+        Write-Host "Snapshot wird erstellt, da heute der Mittwoch nach dem zweiten Dienstag des Monats ist."
+    } elseif ($BypassWednesdayCheck) {
+        Write-Host "Snapshot wird erstellt, da BypassWednesdayCheck aktiv ist."
     }
-    return $false
+} else {
+    Write-Host "Heute ist nicht der Mittwoch nach dem zweiten Dienstag des Monats und BypassWednesdayCheck ist nicht gesetzt. Snapshot wird NICHT erstellt."
+    Quit
 }
+
 
 
 
@@ -145,57 +122,10 @@ function Push-ZabbixData {
     }
     try {
         $response = Invoke-RestMethod -Uri $zabbixApiUrl -Method Post -Body ($body | ConvertTo-Json -Depth 10) -Headers $headers
-        #Write-Host "Daten erfolgreich an Zabbix gesendet: ItemID = $itemId, Wert = $value"
+        Write-Host "Daten erfolgreich an Zabbix gesendet: ItemID = $itemId, Wert = $value"
     } catch {
         Write-Error "Fehler beim Senden von Daten an Zabbix: $_"
     }
-}
-
-function Update-ZabbixItemPreprocessing {
-    param (
-        [string]$ZabbixUrl,        # Die URL des Zabbix-Servers
-        [string]$AuthToken,        # Dein Authentifizierungstoken
-        
-        [string]$Regex             # Der Regex-Ausdruck
-    )
-    $itemKey = "WUPhase$phase-$vmName"
-    $hostName = "WindowsVMs" 
-   
-    # HostID fï¿½r den Host "WindowsVMs" holen
-    $hostId = Get-ZabbixHost -hostName $hostName
-    if ($hostId) {
-        # ItemID fï¿½r den Key der aktuellen Phase holen
-        $itemId = Get-ZabbixItemId -hostId $hostId -itemKey $itemKey
-
-    # JSON-Body fï¿½r den API-Aufruf
-    $Body = @{
-        jsonrpc   = "2.0"
-        method    = "item.update"
-        params    = @{
-            itemid      = $ItemId
-            preprocessing = @(
-                @{
-                    type         = 5  
-                    params       =  $RegEx
-                    error_handler = 0  # Keine Fehlerbehandlung
-                }
-            )
-        }
-        
-        id        = 1
-    } 
-
-    try {
-        # API-Aufruf durchfï¿½hren
-        $response = Invoke-RestMethod -Uri $zabbixApiUrl -Method Post -Body ($body | ConvertTo-Json -Depth 10) -Headers $headers
-
-
-        # Antwort anzeigen
-        return $response
-    } catch {
-        Write-Error "Fehler beim Update des Zabbix-Items: $_"
-    }
-}
 }
 
 # Funktion: Snapshot erstellen
@@ -210,14 +140,14 @@ function Create-Snapshot {
     try {
         Connect-VIServer -Server $vCenterServer -User $username -Password $password -ErrorAction Stop | Out-Null
     } catch {
-        Write-Host "Fehler bei der Verbindung zu vCenter: $vCenterServer fï¿½r VM: $vmName" -ForegroundColor Red
+        Write-Host "Fehler bei der Verbindung zu vCenter: $vCenterServer für VM: $vmName" -ForegroundColor Red
         return $false
     }
     try {
         $vm = Get-VM -Name $vmName -ErrorAction SilentlyContinue
         if ($vm -and $vm.PowerState -eq 'PoweredOn') {
             New-Snapshot -VM $vm -Name "Phase $phase $(Get-Date -Format 'dd.MM.yyyy HH:mm')" -Description $snapshotDescription | Out-Null
-            Write-Host "Snapshot erfolgreich fï¿½r VM $vmName auf $vCenterServer."
+            Write-Host "Snapshot erfolgreich für VM $vmName auf $vCenterServer."
             return $true
         } elseif ($vm) {
             Write-Host "VM $vmName ist nicht eingeschaltet. Kein Snapshot erstellt."
@@ -227,24 +157,24 @@ function Create-Snapshot {
             return $false
         }
     } catch {
-        Write-Host "Fehler beim Erstellen des Snapshots fï¿½r VM $vmName auf $($vCenterServer): $($_.Exception.Message)"
+        Write-Host "Fehler beim Erstellen des Snapshots für VM $vmName auf $($vCenterServer): $($_.Exception.Message)"
         return $false
     }
 }
 
-# Funktion: Beschreibung eines Zabbix Items ï¿½ndern
+# Funktion: Beschreibung eines Zabbix Items ändern
 function Update-ZabbixItemDescription {
     param (
         [string]$newDescription,
         [string]$vmName
     )
     $hostName = "WindowsVMs"  # Der Hostname bleibt immer gleich
-    $itemKey = "WUPhase$phase-$vmName"
+    $itemKey = "WUPhase1-$vmName"
     
-    # HostID fï¿½r den Host "WindowsVMs" holen
+    # HostID für den Host "WindowsVMs" holen
     $hostId = Get-ZabbixHost -hostName $hostName
     if ($hostId) {
-        # ItemID fï¿½r den Key derk aktuellen Phase holen
+        # ItemID für den Key "WUPhase1-$vmName" holen
         $itemId = Get-ZabbixItemId -hostId $hostId -itemKey $itemKey
         if ($itemId) {
             $body = @{
@@ -258,7 +188,7 @@ function Update-ZabbixItemDescription {
             }
             try {
                 $response = Invoke-RestMethod -Uri $zabbixApiUrl -Method Post -Body ($body | ConvertTo-Json -Depth 10) -Headers $headers
-                #Write-Host "Item-Beschreibung erfolgreich aktualisiert: $newDescription"
+                Write-Host "Item-Beschreibung erfolgreich aktualisiert: $newDescription"
             } catch {
                 Write-Error "Fehler beim Aktualisieren der Item-Beschreibung: $_"
             }
@@ -268,20 +198,20 @@ function Update-ZabbixItemDescription {
 
 if ((Is-Wednesday-After-Second-Tuesday) -or $BypassWednesdayCheck) {
     if (Is-Wednesday-After-Second-Tuesday) {
-       # Write-Host "Snapshot wird erstellt, da heute der Mittwoch nach dem zweiten Dienstag des Monats ist."
+        Write-Host "Snapshot wird erstellt, da heute der Mittwoch nach dem zweiten Dienstag des Monats ist."
     } elseif ($BypassWednesdayCheck) {
-       # Write-Host "Snapshot wird erstellt, da BypassWednesdayCheck aktiv ist."
+        Write-Host "Snapshot wird erstellt, da BypassWednesdayCheck aktiv ist."
     }
 } else {
     Write-Host "Heute ist nicht der Mittwoch nach dem zweiten Dienstag des Monats und BypassWednesdayCheck ist nicht gesetzt. Snapshot wird NICHT erstellt."
-    Exit
+    Quit
 }
 
 
-# Liste der VMs fï¿½r Phase 1
+# Liste der VMs für Phase 1
 $vmNamesList = $vmlist
 
-# Liste der vCenter-Server fï¿½r Phase 1
+# Liste der vCenter-Server für Phase 1
 $vCenterServers = @(
     'vc1.mgmt.lan',
     'vc2.mgmt.lan',
@@ -289,14 +219,14 @@ $vCenterServers = @(
     'vc4.mgmt.lan'
 )
 
-# Snapshots fï¿½r alle VMs erstellen
+# Snapshots für alle VMs erstellen
 foreach ($vmName in $vmNamesList) {
-    Write-Host "Starte Verarbeitung fï¿½r VM: $vmName" -ForegroundColor Yellow
+    Write-Host "Starte Verarbeitung für VM: $vmName" -ForegroundColor Yellow
 
     $snapshotCreated = $false
 
     foreach ($vCenterServer in $vCenterServers) {
-        Write-Host "Verbinde mit vCenter: $vCenterServer fï¿½r VM: $vmName" -ForegroundColor Cyan
+        Write-Host "Verbinde mit vCenter: $vCenterServer für VM: $vmName" -ForegroundColor Cyan
         if (Create-Snapshot -vCenterServer $vCenterServer -username $username -password $password -vmName $vmName -snapshotDescription $snapshotDescription) {
             $snapshotCreated = $true
 
@@ -305,20 +235,20 @@ foreach ($vmName in $vmNamesList) {
 
 
             if ($hostId) {
-                #Write-Host "HostID fï¿½r 'WindowsVMs': $hostId"
+                Write-Host "HostID für 'WindowsVMs': $hostId"
             } else {
-                #Write-Host "Host konnte nicht ermittelt werden."
+                Write-Host "Host konnte nicht ermittelt werden."
                 exit
             }
 
-            # Der ursprï¿½ngliche Teil bleibt unverï¿½ndert:
+            # Der ursprüngliche Teil bleibt unverändert:
             $itemKey = "vSphere.Snapshot.Status"
             $itemId = Get-ZabbixItemId -hostId $hostId -itemKey $itemKey
 
             if ($itemId) {
-                #Write-Host "ItemID fï¿½r '$itemKey' auf Host '$vmName': $itemId"
+                Write-Host "ItemID für '$itemKey' auf Host '$vmName': $itemId"
             } else {
-                #Write-Host "ItemID konnte nicht ermittelt werden."
+                Write-Host "ItemID konnte nicht ermittelt werden."
                 exit
             }
 
@@ -326,22 +256,15 @@ foreach ($vmName in $vmNamesList) {
             Push-ZabbixData -itemId $itemId -value $Value
 
             # Optional: Wenn der Snapshot erfolgreich war, die Zabbix-Beschreibung aktualisieren
-            $newDescription = "Snapshot fï¿½r Phase $phase WU am $(Get-Date -Format 'dd.MM.yyyy') um $(Get-Date -Format 'HH:mm') erfolgreich"
+            $newDescription = "Snapshot für Phase $phase WU am $(Get-Date -Format 'dd.MM.yyyy') um $(Get-Date -Format 'HH:mm') erfolgreich"
             Update-ZabbixItemDescription -newDescription $newDescription -vmName $vmName
-	    $Regex = ".*Snapshot erfolgreich f.r VM $vmName auf \S+\.\S+.*"+[char]10+"\0"
-
-	
-	    $response = Update-ZabbixItemPreprocessing -ZabbixUrl $zabbixApiUrl -AuthToken $apiToken -Regex $Regex
-
-		# Antwort anzeigen
-	    #Write-Host "Antwort von Zabbix: $($response | ConvertTo-Json -Depth 4)"
 
             break
         }
     }
 
     if (-not $snapshotCreated) {
-        Write-Host "Snapshot konnte fï¿½r VM $vmName nicht erstellt werden." -ForegroundColor Red
+        Write-Host "Snapshot konnte für VM $vmName nicht erstellt werden." -ForegroundColor Red
     }
 }
 
@@ -349,5 +272,4 @@ foreach ($vmName in $vmNamesList) {
 $scriptEndTime = Get-Date
 $totalDuration = $scriptEndTime - $scriptStartTime
 Write-Host "Gesamtdauer des Skripts: $($totalDuration.TotalSeconds) Sekunden" -ForegroundColor Cyan
-
 
