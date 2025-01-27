@@ -1,8 +1,6 @@
 # Startzeit des Skripts
 $scriptStartTime = Get-Date
 
-$ue = [char]0x00FC
-
 Set-PowerCLIConfiguration -DefaultVIServerMode Multiple -Scope User  -Confirm:$false | out-null
 
 
@@ -16,6 +14,7 @@ $vmlist={vmNamesList}
 $BypassWednesdayCheck = {BypassWednesdayCheck}  # Wird durch den Wert von BypassWednesdayCheck ersetzt
 
 
+
 # VMware-Verbindungsdaten
 
 $currentTime = Get-Date -Format 'yyyy-MM-dd_HH-mm-ss'
@@ -25,8 +24,7 @@ $snapshotDescription = "Snapshot vom $(Get-Date -Format 'dd.MM.yyyy')"
 $zabbixServer = "192.168.116.114"
 $apiToken = "b910b5ad64ac886ed834e88cb71de707fd6b1e31b5df63fc542e4ed2eb801be4"  # API Token
 $zabbixApiUrl = "http://$($zabbixServer):8080/api_jsonrpc.php"
-
-# Header für die Anfrage
+# Header fï¿½r die Anfrage
 $headers = @{
     "Authorization" = "Bearer $apiToken"
     "Content-Type"  = "application/json"
@@ -64,7 +62,7 @@ function Is-Wednesday-After-Second-Tuesday {
 
         #Write-Host "Mittwoch nach dem zweiten Dienstag des Monats: $wednesdayAfterSecondTuesday"
 
-        # Überprüfen, ob heute dieser Mittwoch ist
+        # ï¿½berprï¿½fen, ob heute dieser Mittwoch ist
         return ($currentDate.Date -eq $wednesdayAfterSecondTuesday.Date)
     }
     return $false
@@ -126,70 +124,6 @@ function Get-ZabbixItemId {
     }
 }
 
-function Update-ZabbixMacro {
-    param (
-        [string]$hostId,
-        [string]$macroName,
-        [string]$macroValue
-    )
-    
-    # Hole die aktuellen Makros des Hosts
-    $body = @{
-        jsonrpc = "2.0"
-        method  = "host.get"
-        params  = @{
-            hostids = $hostId
-            selectMacros = "extend"  # Holen aller Makros des Hosts
-        }
-        id      = 1
-    }
-    
-    try {
-        $response = Invoke-RestMethod -Uri $zabbixApiUrl -Method Post -Body ($body | ConvertTo-Json -Depth 10) -Headers $headers
-        $currentMacros = $response.result[0].macros
-    } catch {
-        Write-Error "Fehler beim Abrufen der Makros des Hosts: $_"
-        return
-    }
-    
-    # Finde das Makro, das aktualisiert werden soll
-    $existingMacro = $currentMacros | Where-Object { $_.macro -eq $macroName }
-    
-    if ($existingMacro) {
-        # Wenn das Makro existiert, aktualisiere es
-        $existingMacro.value = $macroValue
-    } else {
-        # Andernfalls erstelle ein neues Makro
-        $currentMacros += @{ macro = $macroName; value = $macroValue }
-    }
-
-    # Baue die endgültigen Makros für den Update-Request
-    $updatedMacros = $currentMacros | ForEach-Object {
-        @{
-            macro = $_.macro
-            value = $_.value
-        }
-    }
-    
-    # Update die Makros mit den neuen Werten
-    $body = @{
-        jsonrpc = "2.0"
-        method  = "host.update"
-        params  = @{
-            hostid = $hostId
-            macros  = $updatedMacros
-        }
-        id      = 1
-    }
-    
-    try {
-        $response = Invoke-RestMethod -Uri $zabbixApiUrl -Method Post -Body ($body | ConvertTo-Json -Depth 10) -Headers $headers
-        Write-Host "Makro erfolgreich aktualisiert: $macroName = $macroValue"
-    } catch {
-        Write-Error "Fehler beim Aktualisieren des Zabbix-Makros: $_"
-    }
-}
-
 # Funktion: Daten an Zabbix mit history.push senden
 function Push-ZabbixData {
     param (
@@ -227,13 +161,13 @@ function Update-ZabbixItemPreprocessing {
     $itemKey = "WUPhase$phase-$vmName"
     $hostName = "WindowsVMs" 
    
-    # HostID für den Host "WindowsVMs" holen
+    # HostID fï¿½r den Host "WindowsVMs" holen
     $hostId = Get-ZabbixHost -hostName $hostName
     if ($hostId) {
         # ItemID fï¿½r den Key der aktuellen Phase holen
         $itemId = Get-ZabbixItemId -hostId $hostId -itemKey $itemKey
 
-    # JSON-Body für den API-Aufruf
+    # JSON-Body fï¿½r den API-Aufruf
     $Body = @{
         jsonrpc   = "2.0"
         method    = "item.update"
@@ -252,7 +186,7 @@ function Update-ZabbixItemPreprocessing {
     } 
 
     try {
-        # API-Aufruf durchführen
+        # API-Aufruf durchfï¿½hren
         $response = Invoke-RestMethod -Uri $zabbixApiUrl -Method Post -Body ($body | ConvertTo-Json -Depth 10) -Headers $headers
 
 
@@ -276,14 +210,14 @@ function Create-Snapshot {
     try {
         Connect-VIServer -Server $vCenterServer -User $username -Password $password -ErrorAction Stop | Out-Null
     } catch {
-        Write-Host "Fehler bei der Verbindung zu vCenter: $vCenterServer f$($ue)r VM: $vmName" -ForegroundColor Red
+        Write-Host "Fehler bei der Verbindung zu vCenter: $vCenterServer fï¿½r VM: $vmName" -ForegroundColor Red
         return $false
     }
     try {
         $vm = Get-VM -Name $vmName -ErrorAction SilentlyContinue
         if ($vm -and $vm.PowerState -eq 'PoweredOn') {
-            #New-Snapshot -VM $vm -Name "Phase $phase $(Get-Date -Format 'dd.MM.yyyy HH:mm')" -Description $snapshotDescription | Out-Null
-            Write-Host "Snapshot erfolgreich f$($ue)r VM $vmName auf $vCenterServer."
+            New-Snapshot -VM $vm -Name "Phase $phase $(Get-Date -Format 'dd.MM.yyyy HH:mm')" -Description $snapshotDescription | Out-Null
+            Write-Host "Snapshot erfolgreich fï¿½r VM $vmName auf $vCenterServer."
             return $true
         } elseif ($vm) {
             Write-Host "VM $vmName ist nicht eingeschaltet. Kein Snapshot erstellt."
@@ -293,7 +227,7 @@ function Create-Snapshot {
             return $false
         }
     } catch {
-        Write-Host "Fehler beim Erstellen des Snapshots f$($ue)r VM $vmName auf $($vCenterServer): $($_.Exception.Message)"
+        Write-Host "Fehler beim Erstellen des Snapshots fï¿½r VM $vmName auf $($vCenterServer): $($_.Exception.Message)"
         return $false
     }
 }
@@ -307,10 +241,10 @@ function Update-ZabbixItemDescription {
     $hostName = "WindowsVMs"  # Der Hostname bleibt immer gleich
     $itemKey = "WUPhase$phase-$vmName"
     
-    # HostID für den Host "WindowsVMs" holen
+    # HostID fï¿½r den Host "WindowsVMs" holen
     $hostId = Get-ZabbixHost -hostName $hostName
     if ($hostId) {
-        # ItemID für den Key der aktuellen Phase holen
+        # ItemID fï¿½r den Key derk aktuellen Phase holen
         $itemId = Get-ZabbixItemId -hostId $hostId -itemKey $itemKey
         if ($itemId) {
             $body = @{
@@ -344,10 +278,10 @@ if ((Is-Wednesday-After-Second-Tuesday) -or $BypassWednesdayCheck) {
 }
 
 
-# Liste der VMs für Phase 
+# Liste der VMs fï¿½r Phase 1
 $vmNamesList = $vmlist
 
-# Liste der vCenter-Server fï¿½r Phase 
+# Liste der vCenter-Server fï¿½r Phase 1
 $vCenterServers = @(
     'vc1.mgmt.lan',
     'vc2.mgmt.lan',
@@ -355,14 +289,14 @@ $vCenterServers = @(
     'vc4.mgmt.lan'
 )
 
-# Snapshots für alle VMs erstellen
+# Snapshots fï¿½r alle VMs erstellen
 foreach ($vmName in $vmNamesList) {
-    Write-Host "Starte Verarbeitung f$($ue)r VM: $vmName" -ForegroundColor Yellow
+    Write-Host "Starte Verarbeitung fï¿½r VM: $vmName" -ForegroundColor Yellow
 
     $snapshotCreated = $false
 
     foreach ($vCenterServer in $vCenterServers) {
-        Write-Host "Verbinde mit vCenter: $vCenterServer f$($ue)r VM: $vmName" -ForegroundColor Cyan
+        Write-Host "Verbinde mit vCenter: $vCenterServer fï¿½r VM: $vmName" -ForegroundColor Cyan
         if (Create-Snapshot -vCenterServer $vCenterServer -username $username -password $password -vmName $vmName -snapshotDescription $snapshotDescription) {
             $snapshotCreated = $true
 
@@ -371,13 +305,13 @@ foreach ($vmName in $vmNamesList) {
 
 
             if ($hostId) {
-              
+                #Write-Host "HostID fï¿½r 'WindowsVMs': $hostId"
             } else {
                 Write-Host "Host konnte nicht ermittelt werden."
                 
             }
 
-            # Der ursprüngliche Teil bleibt unverändert:
+            # Der ursprï¿½ngliche Teil bleibt unverï¿½ndert:
             $itemKey = "vSphere.Snapshot.Status"
             $itemId = Get-ZabbixItemId -hostId $hostId -itemKey $itemKey
 
@@ -390,14 +324,9 @@ foreach ($vmName in $vmNamesList) {
 
             $Value = "Snapshot Phase $phase WU erfolgreich"
             Push-ZabbixData -itemId $itemId -value $Value
-            # Update das Makro für den Host in Zabbix
-            $macroName = "{`$VSPHERE_SNAPSHOT_STATUS}"
-            $macroValue = "Snapshot f$($ue)r VM $vmName in Phase $phase erfolgreich am $(Get-Date -Format 'dd.MM.yyyy') erstellt."
-            write-host $hostId $macroName
-            Update-ZabbixMacro -hostId $hostId -macroName $macroName -macroValue $macroValue
 
             # Optional: Wenn der Snapshot erfolgreich war, die Zabbix-Beschreibung aktualisieren
-            $newDescription = "Snapshot f$($ue)r Phase $phase WU am $(Get-Date -Format 'dd.MM.yyyy') um $(Get-Date -Format 'HH:mm') erfolgreich"
+            $newDescription = "Snapshot fï¿½r Phase $phase WU am $(Get-Date -Format 'dd.MM.yyyy') um $(Get-Date -Format 'HH:mm') erfolgreich"
             Update-ZabbixItemDescription -newDescription $newDescription -vmName $vmName
 	    $Regex = ".*Snapshot erfolgreich f.r VM $vmName auf \S+\.\S+.*"+[char]10+"\0"
 
@@ -420,6 +349,5 @@ foreach ($vmName in $vmNamesList) {
 $scriptEndTime = Get-Date
 $totalDuration = $scriptEndTime - $scriptStartTime
 Write-Host "Gesamtdauer des Skripts: $($totalDuration.TotalSeconds) Sekunden" -ForegroundColor Cyan
-
 
 
