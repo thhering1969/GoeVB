@@ -2,17 +2,10 @@
 $startTime = Get-Date
 
 try {
-    # Prüfen, ob das Modul geladen oder nur verfügbar ist
-    if (-not (Get-Module -Name PSWindowsUpdate)) {
-        if (Get-Module -Name PSWindowsUpdate -ListAvailable) {
-            Write-Host "Das Modul 'PSWindowsUpdate' ist verfügbar, aber nicht geladen. Lade es jetzt..."
-            Import-Module -Name PSWindowsUpdate -Force -ErrorAction Stop
-        } else {
-            Write-Host "Das Modul 'PSWindowsUpdate' ist nicht installiert."
-            exit
-        }
-    } else {
-        Write-Host "Das Modul 'PSWindowsUpdate' ist bereits geladen."
+    # Prüfen, ob der Befehl 'Get-WindowsUpdate' verfügbar ist
+    if (-not (Get-Command -Name Get-WindowsUpdate -ErrorAction SilentlyContinue)) {
+        Write-Host "Der Befehl 'Get-WindowsUpdate' ist nicht verfügbar. Stellen Sie sicher, dass das 'PSWindowsUpdate'-Modul installiert ist."
+        exit
     }
 
     # Windows-Updates abrufen
