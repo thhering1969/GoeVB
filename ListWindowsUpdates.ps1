@@ -2,25 +2,17 @@
 $startTime = Get-Date
 
 try {
-    # Prüfen, ob das PSWindowsUpdate-Modul bereits geladen oder nur verfügbar ist
-    if (Get-Module -Name PSWindowsUpdate) {
-        Write-Host "Das Modul 'PSWindowsUpdate' ist bereits geladen."
-    } elseif (Get-Module -Name PSWindowsUpdate -ListAvailable) {
-        Write-Host "Das Modul 'PSWindowsUpdate' ist auf dem System verfügbar, aber nicht geladen."
-        
-        # Versuch, das Modul zu laden
-        try {
-            Import-Module -Name PSWindowsUpdate -ErrorAction Stop
-            Write-Host "Das Modul 'PSWindowsUpdate' wurde erfolgreich geladen."
-        } catch {
-            Write-Error "Fehler beim Laden des Moduls 'PSWindowsUpdate': $_"
+    # Prüfen, ob das Modul geladen oder nur verfügbar ist
+    if (-not (Get-Module -Name PSWindowsUpdate)) {
+        if (Get-Module -Name PSWindowsUpdate -ListAvailable) {
+            Write-Host "Das Modul 'PSWindowsUpdate' ist verfügbar, aber nicht geladen. Lade es jetzt..."
+            Import-Module -Name PSWindowsUpdate -Force -ErrorAction Stop
+        } else {
+            Write-Host "Das Modul 'PSWindowsUpdate' ist nicht installiert."
+            exit
         }
     } else {
-        Write-Host "Das Modul 'PSWindowsUpdate' ist nicht installiert."
-        
-        # Optional: Anweisungen zur Installation geben
-        #Write-Host "Bitte installieren Sie das Modul mit folgendem Befehl:"
-        #Write-Host "Install-Module -Name PSWindowsUpdate -Force"
+        Write-Host "Das Modul 'PSWindowsUpdate' ist bereits geladen."
     }
 
     # Windows-Updates abrufen
@@ -45,6 +37,7 @@ try {
         $aggregatedMessage = $updateMessages -join "`n"
         Write-Host "Updates gefunden:`n$aggregatedMessage"
     }
+
 } catch {
     Write-Error "Fehler beim Abrufen der Windows-Updates: $_"
 }
