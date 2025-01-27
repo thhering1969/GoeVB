@@ -2,6 +2,8 @@ param(
     [string]$vsphereSnapshotStatus
 )
 
+$OutputEncoding = [System.Text.Encoding]::UTF8
+
 # Beispielhafte Verarbeitung des übergebenen Werts
 Write-Host "Der Wert des Makros {`$VSPHERE_SNAPSHOT_STATUS} ist: $vsphereSnapshotStatus"
 
