@@ -1,7 +1,8 @@
 # Startzeit des Skripts
 $scriptStartTime = Get-Date
 
-$ue = [char]0x00FC
+[System.Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+
 
 Set-PowerCLIConfiguration -DefaultVIServerMode Multiple -Scope User  -Confirm:$false | out-null
 
@@ -230,7 +231,7 @@ function Update-ZabbixItemPreprocessing {
     # HostID für den Host "WindowsVMs" holen
     $hostId = Get-ZabbixHost -hostName $hostName
     if ($hostId) {
-        # ItemID fï¿½r den Key der aktuellen Phase holen
+        # ItemID für den Key der aktuellen Phase holen
         $itemId = Get-ZabbixItemId -hostId $hostId -itemKey $itemKey
 
     # JSON-Body für den API-Aufruf
@@ -283,7 +284,7 @@ function Create-Snapshot {
         $vm = Get-VM -Name $vmName -ErrorAction SilentlyContinue
         if ($vm -and $vm.PowerState -eq 'PoweredOn') {
             #New-Snapshot -VM $vm -Name "Phase $phase $(Get-Date -Format 'dd.MM.yyyy HH:mm')" -Description $snapshotDescription | Out-Null
-            Write-Host "Snapshot erfolgreich f$($ue)r VM $vmName auf $vCenterServer."
+            Write-Host "Snapshot erfolgreich für VM $vmName auf $vCenterServer."
             return $true
         } elseif ($vm) {
             Write-Host "VM $vmName ist nicht eingeschaltet. Kein Snapshot erstellt."
@@ -293,7 +294,7 @@ function Create-Snapshot {
             return $false
         }
     } catch {
-        Write-Host "Fehler beim Erstellen des Snapshots f$($ue)r VM $vmName auf $($vCenterServer): $($_.Exception.Message)"
+        Write-Host "Fehler beim Erstellen des Snapshots für VM $vmName auf $($vCenterServer): $($_.Exception.Message)"
         return $false
     }
 }
@@ -357,12 +358,12 @@ $vCenterServers = @(
 
 # Snapshots für alle VMs erstellen
 foreach ($vmName in $vmNamesList) {
-    Write-Host "Starte Verarbeitung f$($ue)r VM: $vmName" -ForegroundColor Yellow
+    Write-Host "Starte Verarbeitung für VM: $vmName" -ForegroundColor Yellow
 
     $snapshotCreated = $false
 
     foreach ($vCenterServer in $vCenterServers) {
-        Write-Host "Verbinde mit vCenter: $vCenterServer f$($ue)r VM: $vmName" -ForegroundColor Cyan
+        Write-Host "Verbinde mit vCenter: $vCenterServer für VM: $vmName" -ForegroundColor Cyan
         if (Create-Snapshot -vCenterServer $vCenterServer -username $username -password $password -vmName $vmName -snapshotDescription $snapshotDescription) {
             $snapshotCreated = $true
 
@@ -382,7 +383,7 @@ foreach ($vmName in $vmNamesList) {
             $itemId = Get-ZabbixItemId -hostId $hostId -itemKey $itemKey
 
             if ($itemId) {
-                #Write-Host "ItemID fï¿½r '$itemKey' auf Host '$vmName': $itemId"
+                #Write-Host "ItemID für '$itemKey' auf Host '$vmName': $itemId"
             } else {
                 Write-Host "ItemID konnte nicht ermittelt werden."
                 
@@ -392,12 +393,12 @@ foreach ($vmName in $vmNamesList) {
             Push-ZabbixData -itemId $itemId -value $Value
             # Update das Makro für den Host in Zabbix
             $macroName = "{`$VSPHERE_SNAPSHOT_STATUS}"
-            $macroValue = "Snapshot f$($ue)r VM $vmName in Phase $phase erfolgreich am $(Get-Date -Format 'dd.MM.yyyy') erstellt."
+            $macroValue = "Snapshot für VM $vmName in Phase $phase erfolgreich am $(Get-Date -Format 'dd.MM.yyyy') erstellt."
             write-host $hostId $macroName
             Update-ZabbixMacro -hostId $hostId -macroName $macroName -macroValue $macroValue
 
             # Optional: Wenn der Snapshot erfolgreich war, die Zabbix-Beschreibung aktualisieren
-            $newDescription = "Snapshot f$($ue)r Phase $phase WU am $(Get-Date -Format 'dd.MM.yyyy') um $(Get-Date -Format 'HH:mm') erfolgreich"
+            $newDescription = "Snapshot für Phase $phase WU am $(Get-Date -Format 'dd.MM.yyyy') um $(Get-Date -Format 'HH:mm') erfolgreich"
             Update-ZabbixItemDescription -newDescription $newDescription -vmName $vmName
 	    $Regex = ".*Snapshot erfolgreich f.r VM $vmName auf \S+\.\S+.*"+[char]10+"\0"
 
