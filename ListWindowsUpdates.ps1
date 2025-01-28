@@ -1,6 +1,10 @@
 ﻿# Startzeit erfassen
 $startTime = Get-Date
 
+[System.Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+
+
+
 try {
     # Prüfen, ob der Befehl 'Get-WindowsUpdate' verfügbar ist
     if (-not (Get-Command -Name Get-WindowsUpdate -ErrorAction SilentlyContinue)) {
