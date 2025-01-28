@@ -9,7 +9,7 @@ try {
     }
 
     # Windows-Updates abrufen
-    $updates = (Get-WindowsUpdate).GetEnumerator() | Select-Object -Property Title, KB, Size, LastDeploymentChangeTime
+    $updates = Get-WindowsUpdate -Verbose
 
     if ($updates.Count -eq 0) {
         Write-Host "Keine Updates gefunden."
@@ -17,7 +17,7 @@ try {
         $updateMessages = @()
         foreach ($update in $updates) {
             $title = $update.Title
-            $kb = $update.KB
+            $kb = $update.KBArticleIDs -join ", "
             $size = $update.Size
             $date = $update.LastDeploymentChangeTime
 
