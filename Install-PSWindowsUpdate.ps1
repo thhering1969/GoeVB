@@ -36,7 +36,7 @@ $OutputEncoding=[System.Text.Encoding]::UTF8
 $PSDefaultParameterValues['*:Encoding'] = 'utf8'
 
 Write-Output "Überprüfe, ob der NuGet-Anbieter installiert ist..." 
-exit
+
 
 $nugetProvider = Get-PackageProvider -Name NuGet -ErrorAction SilentlyContinue
 if (-not $nugetProvider) {
