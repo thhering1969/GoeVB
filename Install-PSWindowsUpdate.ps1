@@ -1,11 +1,13 @@
 <#
 Version: 1.3
 Datum: 29. Januar 2025
-Autor: GÃ¶VB
-Beschreibung: Dieses Skript prÃ¼ft, ob das PowerShell-Modul PSWindowsUpdate bereits installiert ist. Wenn nicht, wird es extrahiert und an den richtigen Speicherort im PowerShell-Modulverzeichnis kopiert. Es wird auch die Anzahl der neuen Befehle angezeigt, wenn das Modul importiert wird. Am Ende werden die verfÃ¼gbaren Windows-Updates abgefragt.
+Autor: GöVB
+Beschreibung: Dieses Skript prüft, ob das PowerShell-Modul PSWindowsUpdate bereits installiert ist. Wenn nicht, wird es extrahiert und an den richtigen Speicherort im PowerShell-Modulverzeichnis kopiert. Es wird auch die Anzahl der neuen Befehle angezeigt, wenn das Modul importiert wird. Am Ende werden die verfügbaren Windows-Updates abgefragt.
 #>
 
-# Setze die Ausgabe-Codierung fÃ¼r Konsolenausgabe auf UTF-8
+$startTime = Get-Date
+
+# Setze die Ausgabe-Codierung für Konsolenausgabe auf UTF-8
 #[System.Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 
 # Definiere Pfade
@@ -16,19 +18,25 @@ $moduleDestinationPath = "$modulePath\PSWindowsUpdate"  # Zielmodulpfad
 
 $scriptPath = $MyInvocation.MyCommand.Path
 
+
 . "$PSScriptRoot\EncodingFunctions.ps1"
 
-  $outputPath = "$scriptPath-converted.ps1"
- Convert-ToSBCS -filePath $scriptPath -outputPath $outputPath
+ $outputPath = "$scriptPath-converted.ps1"
+Convert-ToSBCS -filePath $scriptPath -outputPath $outputPath
 
 
 
 
 
 
+# Schritt 1: Überprüfen, ob der NuGet-Anbieter vorhanden ist
 
-# Schritt 1: ÃœberprÃ¼fen, ob der NuGet-Anbieter vorhanden ist
-Write-Host "ÃœberprÃ¼fe, ob der NuGet-Anbieter installiert ist..."
+[System.Console]::OutputEncoding=[System.Text.Encoding]::UTF8
+$OutputEncoding=[System.Text.Encoding]::UTF8
+$PSDefaultParameterValues['*:Encoding'] = 'utf8'
+
+Write-Output "Überprüfe, ob der NuGet-Anbieter installiert ist..." 
+exit
 
 $nugetProvider = Get-PackageProvider -Name NuGet -ErrorAction SilentlyContinue
 if (-not $nugetProvider) {
@@ -38,8 +46,8 @@ if (-not $nugetProvider) {
     Write-Host "NuGet-Anbieter bereits installiert."
 }
 
-# Schritt 2: ÃœberprÃ¼fen, ob das PSWindowsUpdate-Modul bereits installiert ist
-Write-Host "ÃœberprÃ¼fe, ob das PSWindowsUpdate-Modul bereits installiert ist..."
+# Schritt 2: Überprüfen, ob das PSWindowsUpdate-Modul bereits installiert ist
+Write-Host "Überprüfe, ob das PSWindowsUpdate-Modul bereits installiert ist..."
 
 $installedModule = Get-Module -ListAvailable -Name PSWindowsUpdate
 if ($installedModule) {
@@ -50,7 +58,7 @@ if ($installedModule) {
     # Schritt 3: Installiere das PSWindowsUpdate-Modul, falls nicht vorhanden
     Install-Module -Name PSWindowsUpdate -Force -Scope CurrentUser
 
-    # ÃœberprÃ¼fen, ob das Modul erfolgreich installiert wurde
+    # Überprüfen, ob das Modul erfolgreich installiert wurde
     $installedModule = Get-Module -ListAvailable -Name PSWindowsUpdate
     if ($installedModule) {
         Write-Host "Das PSWindowsUpdate-Modul wurde erfolgreich installiert."
@@ -66,9 +74,9 @@ if (-not (Get-Module -Name 'PSWindowsUpdate')) {
     Import-Module -Name 'PSWindowsUpdate' -Force
 }
 
-# Schritt 5: ÃœberprÃ¼fen, ob das Modul erfolgreich geladen wurde
+# Schritt 5: Überprüfen, ob das Modul erfolgreich geladen wurde
 if (Get-Module -Name 'PSWindowsUpdate') {
-    Write-Host "Das PSWindowsUpdate-Modul ist jetzt geladen und verfÃ¼gbar."
+    Write-Host "Das PSWindowsUpdate-Modul ist jetzt geladen und verfügbar."
 
     # Schritt 6: Anzahl neuer Befehle anzeigen
     $cmdletCount = (Get-Command -Module 'PSWindowsUpdate' | Where-Object { $_.CommandType -eq 'Cmdlet' }).Count
@@ -77,17 +85,26 @@ if (Get-Module -Name 'PSWindowsUpdate') {
     Write-Host "Das PSWindowsUpdate-Modul konnte nicht geladen werden."
 }
 
-# Schritt 7: Hole die verfÃ¼gbaren Windows-Updates
-Write-Host "Abfrage der verfÃ¼gbaren Windows-Updates..."
+# Schritt 7: Hole die verfügbaren Windows-Updates
+Write-Host "Abfrage der verfügbaren Windows-Updates..."
 $windowsUpdates = Get-WindowsUpdate
 
 if ($windowsUpdates.Count -gt 0) {
-    Write-Host "Es sind $($windowsUpdates.Count) Windows-Updates verfÃ¼gbar."
+    Write-Host "Es sind $($windowsUpdates.Count) Windows-Updates verfügbar."
     Write-Output $windowsUpdates.Count
 } else {
-    Write-Host "Keine Windows-Updates verfÃ¼gbar."
+    Write-Host "Keine Windows-Updates verfügbar."
     Write-Output 0
 }
 
 # Abschlussmeldung
 Write-Host "Aktualisierte Scriptversion: 1.3"
+# Endzeit erfassen
+$endTime = Get-Date
+$duration = $endTime - $startTime
+
+# Laufzeit in Minuten und Sekunden formatieren
+$minutes = [math]::Floor($duration.TotalSeconds / 60)
+$seconds = $duration.TotalSeconds % 60
+
+Write-Host "Scriptlaufzeit: $minutes Minuten und $seconds Sekunden"

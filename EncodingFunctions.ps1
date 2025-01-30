@@ -108,14 +108,20 @@ function Convert-ToSBCS {
 
     # Prüfe, ob die Datei bereits im Windows-1252 (SBCS) Encoding vorliegt
     if ($detectedEncoding -eq "Windows-1252 (SBCS)") {
+        $OutputEncoding=[System.Text.Encoding]::UTF8
+        [System.Console]::OutputEncoding=[System.Text.Encoding]::UTF8
         Write-Host "Die Datei ist bereits im Windows-1252 (SBCS) Encoding. Keine Konvertierung erforderlich."
         return
     }
 
     # Vergleiche mit dem Console-Encoding und konvertiere nur, wenn sie nicht übereinstimmen
     if ($detectedEncoding -ne $consoleEncoding) {
+	$OutputEncoding=[System.Text.Encoding]::UTF8
+        [System.Console]::OutputEncoding=[System.Text.Encoding]::UTF8
         Write-Host "Die Datei ist nicht im richtigen Encoding. Konvertiere..."
     } else {
+	$OutputEncoding=[System.Text.Encoding]::UTF8
+        [System.Console]::OutputEncoding=[System.Text.Encoding]::UTF8
         Write-Host "Das Encoding der Datei stimmt mit dem der Konsole überein. Keine Konvertierung erforderlich."
         return
     }
@@ -134,6 +140,8 @@ function Convert-ToSBCS {
         $content = Get-Content -Path $filePath -Encoding BigEndianUnicode
     }
     else {
+	$OutputEncoding=[System.Text.Encoding]::UTF8
+        [System.Console]::OutputEncoding=[System.Text.Encoding]::UTF8
         Write-Host "Unbekanntes Encoding, die Datei wird nicht konvertiert."
         return
     }
@@ -150,6 +158,8 @@ function Convert-ToSBCS {
     # Speichern der Datei im Windows-1252 Encoding mit den korrekten Zeilenumbrüchen
     [IO.File]::WriteAllBytes($outputPath, $byteContent)
 
+    $OutputEncoding=[System.Text.Encoding]::UTF8
+    [System.Console]::OutputEncoding=[System.Text.Encoding]::UTF8
     Write-Host "Die Datei wurde erfolgreich in Windows-1252 (SBCS) konvertiert und gespeichert."
 }
 
