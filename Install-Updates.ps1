@@ -1,8 +1,23 @@
+#V3.7b
+
 param(
     [string]$vsphereSnapshotStatus
 )
 
-[System.Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+
+$startTime = Get-Date
+
+# Setze die Ausgabe-Codierung für Konsolenausgabe auf UTF-8
+$OutputEncoding = [System.Console]::OutputEncoding = [System.Console]::InputEncoding = [System.Text.Encoding]::UTF8
+$PSDefaultParameterValues['*:Encoding'] = 'utf8'
+
+# Importiere das externe Skript, das die Funktion definiert
+. "$PSScriptRoot\Write-OutputSafe.ps1"
+
+# Setze den Alias für write-output
+New-Alias write-output Write-OutputSafe
+New-Alias write-host Write-OutputSafe
+
 
 
 # Beispielhafte Verarbeitung des übergebenen Werts
