@@ -1,7 +1,16 @@
 ﻿# Startzeit erfassen
 $startTime = Get-Date
 
-[System.Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+# Setze die Ausgabe-Codierung für Konsolenausgabe auf UTF-8
+$OutputEncoding = [System.Console]::OutputEncoding = [System.Console]::InputEncoding = [System.Text.Encoding]::UTF8
+$PSDefaultParameterValues['*:Encoding'] = 'utf8'
+
+# Importiere das externe Skript, das die Funktion definiert
+. "$PSScriptRoot\Write-OutputSafe.ps1"
+
+# Setze den Alias für write-output
+New-Alias write-output Write-OutputSafe
+New-Alias write-host Write-OutputSafe
 
 
 
@@ -13,7 +22,9 @@ try {
     }
 
     # Windows-Updates abrufen
-    $updates = Get-WindowsUpdate -Verbose
+    
+
+    $updates = Get-WindowsUpdate -Verbose 
 
     if ($updates.Count -eq 0) {
         Write-Host "Keine Updates gefunden."
