@@ -7,6 +7,9 @@ Beschreibung: Dieses Skript prüft, ob das PowerShell-Modul PSWindowsUpdate bere
 
 $startTime = Get-Date
 
+[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+
+
 # Setze die Ausgabe-Codierung für Konsolenausgabe auf UTF-8
 $OutputEncoding = [System.Console]::OutputEncoding = [System.Console]::InputEncoding = [System.Text.Encoding]::UTF8
 $PSDefaultParameterValues['*:Encoding'] = 'utf8'
