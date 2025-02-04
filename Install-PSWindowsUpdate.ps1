@@ -1,110 +1,102 @@
 <#
-Version: 1.3
-Datum: 29. Januar 2025
+Version: 1.4
+Datum: 4. Februar 2025
 Autor: GöVB
-Beschreibung: Dieses Skript prüft, ob das PowerShell-Modul PSWindowsUpdate bereits installiert ist. Wenn nicht, wird es extrahiert und an den richtigen Speicherort im PowerShell-Modulverzeichnis kopiert. Es wird auch die Anzahl der neuen Befehle angezeigt, wenn das Modul importiert wird. Am Ende werden die verfügbaren Windows-Updates abgefragt.
+Beschreibung: 
+- Prüft, ob das PSWindowsUpdate-Modul installiert ist. 
+- Installiert es über `Install-Module` oder alternativ über eine ZIP-Datei, falls `Install-Module` fehlschlägt.
+- Zeigt die Anzahl neuer Cmdlets an und listet verfügbare Updates.
 #>
 
 $startTime = Get-Date
 
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 
-
 # Setze die Ausgabe-Codierung für Konsolenausgabe auf UTF-8
 $OutputEncoding = [System.Console]::OutputEncoding = [System.Console]::InputEncoding = [System.Text.Encoding]::UTF8
 $PSDefaultParameterValues['*:Encoding'] = 'utf8'
 
-
 # Definiere Pfade
-$zipPath = "C:\Scripts\Zabbix\PSWindowsUpdate-main.zip"  # Pfad zur ZIP-Datei
-$extractPath = "C:\Scripts\Zabbix\PSWindowsUpdate"  # Zielordner zum Entpacken
-$modulePath = "C:\Program Files\WindowsPowerShell\Modules"  # Systemweiter PowerShell-Modulordner
+$zipPath = "C:\Scripts\Zabbix\PSWindowsUpdate-main.zip"  # ZIP-Datei
+$extractPath = "C:\Scripts\Zabbix\PSWindowsUpdate"  # Entpack-Ordner
+$modulePath = "C:\Program Files\WindowsPowerShell\Modules"  # PowerShell-Modulpfad
 $moduleDestinationPath = "$modulePath\PSWindowsUpdate"  # Zielmodulpfad
 
-
-
-# Importiere das externe Skript, das die Funktion definiert
+# Importiere das externe Skript für Write-OutputSafe
 . "$PSScriptRoot\Write-OutputSafe.ps1"
-
-# Setze den Alias für write-output
 New-Alias write-output Write-OutputSafe
 New-Alias write-host Write-OutputSafe
-#write-Host "test"
-#whoami
 
 
-write-output "Überprüfung, ob der NuGet-Anbieter installiert ist..."
 
-$nugetProvider = Get-PackageProvider -Name NuGet -ErrorAction SilentlyContinue
-if (-not $nugetProvider) {
-    Write-Host "NuGet-Anbieter nicht gefunden. Installiere NuGet..."
-    Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force
-} else {
-    Write-Host "NuGet-Anbieter bereits installiert."
-}
-
-# Schritt 2: Überprüfen, ob das PSWindowsUpdate-Modul bereits installiert ist
+# Prüfen, ob das Modul bereits installiert ist
 Write-Host "Überprüfe, ob das PSWindowsUpdate-Modul bereits installiert ist..."
-
-
 $installedModule = Get-Module -ListAvailable -Name PSWindowsUpdate
-if ($installedModule) {
-    Write-Host "Das PSWindowsUpdate-Modul ist bereits installiert."
-} else {
+
+if (-not $installedModule) {
     Write-Host "Das PSWindowsUpdate-Modul ist nicht installiert. Starte die Installation..."
 
-    # Schritt 3: Installiere das PSWindowsUpdate-Modul, falls nicht vorhanden
-    Install-Module -Name PSWindowsUpdate -Force -Scope CurrentUser
+    Try {
+        Install-Module -Name PSWindowsUpdate -Force -Scope CurrentUser -ErrorAction Stop
+        $installedModule = Get-Module -ListAvailable -Name PSWindowsUpdate
+    } Catch {
+        Write-Host "Install-Module fehlgeschlagen. Wechsle zur manuellen Installation..."
 
-    # Überprüfen, ob das Modul erfolgreich installiert wurde
-    $installedModule = Get-Module -ListAvailable -Name PSWindowsUpdate
-    if ($installedModule) {
-        Write-Host "Das PSWindowsUpdate-Modul wurde erfolgreich installiert."
-    } else {
-        Write-Host "Fehler: Das PSWindowsUpdate-Modul konnte nicht installiert werden."
-        exit
+        # Prüfen, ob ZIP-Datei existiert
+        if (Test-Path $zipPath) {
+            Write-Host "Entpacke das Modul aus der ZIP-Datei..."
+            Expand-Archive -Path $zipPath -DestinationPath $extractPath -Force
+
+            # Setze den korrekten Modulpfad
+            $unpackedModulePath = "$extractPath\PSWindowsUpdate-main\PSWindowsUpdate"
+
+            if (Test-Path "$unpackedModulePath\PSWindowsUpdate.psd1") {
+                Write-Host "Kopiere das Modul in das PowerShell-Modulverzeichnis..."
+                Copy-Item -Path $unpackedModulePath -Destination $moduleDestinationPath -Recurse -Force
+            } else {
+                Write-Host "Fehler: Das entpackte Modulverzeichnis wurde nicht gefunden!"
+                exit 1
+            }
+        } else {
+            Write-Host "Fehler: Die ZIP-Datei für PSWindowsUpdate existiert nicht!"
+            exit 1
+        }
     }
 }
 
-# Schritt 4: Importiere das PSWindowsUpdate-Modul
-if (-not (Get-Module -Name 'PSWindowsUpdate')) {
-    Write-Host "Das PSWindowsUpdate-Modul ist nicht geladen. Importiere es jetzt..."
-    #Import-Module -Name 'PSWindowsUpdate' -Force
-}
+# Modul importieren
+Write-Host "Das PSWindowsUpdate-Modul ist nicht geladen. Importiere es jetzt..."
+Import-Module -Name 'PSWindowsUpdate' -Force
 
-# Schritt 5: Überprüfen, ob das Modul erfolgreich geladen wurde
+# Testen, ob das Modul erfolgreich geladen wurde
 if (Get-Module -Name 'PSWindowsUpdate') {
     Write-Host "Das PSWindowsUpdate-Modul ist jetzt geladen und verfügbar."
 
-    # Schritt 6: Anzahl neuer Befehle anzeigen
+    # Anzahl neuer Befehle anzeigen
     $cmdletCount = (Get-Command -Module 'PSWindowsUpdate' | Where-Object { $_.CommandType -eq 'Cmdlet' }).Count
     Write-Host "Das Modul PSWindowsUpdate hat $cmdletCount neue Cmdlets geladen."
-} else {
-    Write-Host "Das PSWindowsUpdate-Modul konnte nicht geladen werden."
-}
 
-# Schritt 7: Hole die verfügbaren Windows-Updates
-Write-Host "Abfrage der verfügbaren Windows-Updates..."
-$windowsUpdates = Get-WindowsUpdate
+    # Verfügbare Updates abrufen
+    Write-Host "Abfrage der verfügbaren Windows-Updates..."
+    $windowsUpdates = Get-WindowsUpdate -Verbose
 
-if ($windowsUpdates.Count -gt 0) {
-    Write-Host "Es sind $($windowsUpdates.Count) Windows-Updates verfügbar."
-    Write-Output $windowsUpdates.Count
+    if ($windowsUpdates.Count -gt 0) {
+        Write-Host "Es sind $($windowsUpdates.Count) Windows-Updates verfügbar."
+        Write-Output $windowsUpdates.Count
+    } else {
+        Write-Host "Keine Windows-Updates verfügbar."
+        Write-Output 0
+    }
 } else {
-    Write-Host "Keine Windows-Updates verfügbar."
-    Write-Output 0
+    Write-Host "Fehler: Das PSWindowsUpdate-Modul konnte nicht geladen werden."
 }
 
 # Abschlussmeldung
-Write-Host "Aktualisierte Scriptversion: 1.3"
+Write-Host "Aktualisierte Scriptversion: 1.4"
 
-# Endzeit erfassen
+# Laufzeit erfassen
 $endTime = Get-Date
 $duration = $endTime - $startTime
-
-# Laufzeit in Minuten und Sekunden formatieren
 $minutes = [math]::Floor($duration.TotalSeconds / 60)
 $seconds = $duration.TotalSeconds % 60
-
 Write-Host "Scriptlaufzeit: $minutes Minuten und $seconds Sekunden"
-
