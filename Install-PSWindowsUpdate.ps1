@@ -66,7 +66,7 @@ if (-not $installedModule) {
 
 # Modul importieren
 Write-Host "Das PSWindowsUpdate-Modul ist nicht geladen. Importiere es jetzt..."
-Import-Module -Name 'PSWindowsUpdate' -Force
+Import-Module "$moduleDestinationPath\PSWindowsUpdate"
 
 # Testen, ob das Modul erfolgreich geladen wurde
 if (Get-Module -Name 'PSWindowsUpdate') {
