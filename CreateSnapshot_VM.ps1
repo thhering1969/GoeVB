@@ -21,7 +21,7 @@ $PSDefaultParameterValues['*:Encoding'] = 'utf8'
 
 # VMware-Verbindungsdaten
 $username = 'administrator@vsphere.local'
-$password = 'GoeVB2020,'
+$password = 'ff,'
 $env:PowerCLI_SkipWelcome = "True"
 #Set-PowerCLIConfiguration -InvalidCertificateAction Ignore -Scope User -Confirm:$false -WarningAction SilentlyContinue | out-null
 $env:SUPPRESS_BANNER = $true
