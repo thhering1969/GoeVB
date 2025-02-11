@@ -1,61 +1,60 @@
-#V3.7b
-
 param(
     [string]$vsphereSnapshotStatus
 )
 
+$OutputEncoding = [System.Text.Encoding]::UTF8
+$logFile = "C:\Scripts\Zabbix\WindowsUpdate.log"
 
-$startTime = Get-Date
-
-# Setze die Ausgabe-Codierung für Konsolenausgabe auf UTF-8
-$OutputEncoding = [System.Console]::OutputEncoding = [System.Console]::InputEncoding = [System.Text.Encoding]::UTF8
-$PSDefaultParameterValues['*:Encoding'] = 'utf8'
-
-# Importiere das externe Skript, das die Funktion definiert
-. "$PSScriptRoot\Write-OutputSafe.ps1"
-
-# Setze den Alias für write-output
-New-Alias write-output Write-OutputSafe
-New-Alias write-host Write-OutputSafe
-
-
+# Ausgabe sammeln
+$Output = @()
 
 # Beispielhafte Verarbeitung des übergebenen Werts
-Write-Host "Der Wert des Makros {`$VSPHERE_SNAPSHOT_STATUS} ist: $vsphereSnapshotStatus"
+$Output += "Der Wert des Makros {`$VSPHERE_SNAPSHOT_STATUS} ist: $vsphereSnapshotStatus"
 
-# Hier kannst du den Wert weiterverarbeiten, z.B. in einer Variablen speichern
+# Hier kannst du den Wert weiterverarbeiten
 $CheckSnapshot = $vsphereSnapshotStatus
 
-# Regex, um das Datum aus dem Status zu extrahieren (z.B. "27.01.2025")
+# Regex, um das Datum aus dem Status zu extrahieren (z.B. "11.02.2025")
 $pattern = "\d{2}\.\d{2}\.\d{4}"
 
 if ($CheckSnapshot -match $pattern) {
-    # Extrahiertes Datum im Format "dd.MM.yyyy"
+    # Extrahiertes Datum
     $snapshotDate = $matches[0]
     
-    # Das aktuelle Datum im gleichen Format
+    # Aktuelles Datum
     $currentDate = Get-Date -Format "dd.MM.yyyy"
     
-    # Überprüfen, ob das Datum des Snapshots heute ist
+    # Prüfen, ob Snapshot heute erstellt wurde
     if ($snapshotDate -eq $currentDate) {
-        Write-Host "Snapshot wurde heute erstellt!"
-        $CheckSnapshot="OK"
+        $Output += "Snapshot wurde heute erstellt!"
+        $CheckSnapshot = "OK"
     } else {
-        Write-Host "Snapshot wurde nicht heute erstellt, sondern am $snapshotDate."
-	$CheckSnapshot="veraltet"
+        $Output += "Snapshot wurde nicht heute erstellt, sondern am $snapshotDate."
+        $CheckSnapshot = "veraltet"
     }
 } else {
-    Write-Host "Kein Datum im Snapshot-Status gefunden."
-    $CheckSnapshot="fehlt"
+    $Output += "Kein Datum im Snapshot-Status gefunden."
+    $CheckSnapshot = "fehlt"
 }
 
-# Weitere Verarbeitung je nach Status
-if ( $CheckSnapshot -eq "OK") {
-    Write-Host "Snapshot ist aktiv."
-    Get-WindowsUpdate -AcceptAll -Install
+# Falls der Snapshot aktuell ist, Updates ausführen und Ausgabe speichern
+if ($CheckSnapshot -eq "OK") {
+    $Output += "Snapshot ist aktiv."
+    
+    # Windows Updates abrufen & installieren
+    $updateOutput = Get-WindowsUpdate -AcceptAll -Install -IgnoreReboot -Verbose 4>&1 | Out-String
 
-} elseif ($myVar -eq "fehlt") {
-    Write-Host "Snapshot fehlt"
+    $Output += "Windows Update Ergebnis:"
+    $Output += $updateOutput
+
+} elseif ($CheckSnapshot -eq "fehlt") {
+    $Output += "Snapshot fehlt"
 } else {
-    Write-Host "Unbekannter Status: $CheckSnapshot"
+    $Output += "Unbekannter Status: $CheckSnapshot"
 }
+
+# Ausgabe in Datei speichern
+$Output | Out-File -FilePath $logFile -Encoding utf8
+
+# Letzte Zeile als Rückgabewert für Zabbix
+Write-Output ($Output -join "`n")
