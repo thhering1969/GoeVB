@@ -45,7 +45,7 @@ if ($CheckSnapshot -eq "OK") {
     $Output += "Snapshot ist aktiv."
     
     # Windows Updates abrufen & installieren
-    $updateOutput = Get-WindowsUpdate -AcceptAll -Install -IgnoreReboot -Verbose 4>&1 | Format-Table -Wrap -AutoSize | Out-String
+    $updateOutput = Install-WindowsUpdate -AcceptAll -IgnoreReboot -Confirm:$false -Verbose 4>&1 | Format-Table -Wrap -AutoSize | Out-String
 
     $Output += "Windows Update Ergebnis:"
     $Output += $updateOutput
