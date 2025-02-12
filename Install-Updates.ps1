@@ -65,8 +65,11 @@ if ($CheckSnapshot -eq "OK") {
 }
 
 $scriptEndTime = Get-Date
-$totalDuration = $scriptEndTime - $scriptStartTime
-$Output += "Gesamtdauer des Skripts: $($totalDuration.TotalSeconds) Sekunden"
+$duration = $scriptEndTime - $scriptStartTime
+
+$minutes = [math]::Floor($duration.TotalSeconds / 60)
+$seconds = $duration.TotalSeconds % 60
+$Output +=  "Scriptlaufzeit: $minutes Minuten und $seconds Sekunden"
 
 # Schreibe den Inhalt in die Datei
 $Output -join "`n" | Out-File -FilePath "C:\Scripts\Zabbix\WindowsUpdate.log" -Encoding utf8 -Append
