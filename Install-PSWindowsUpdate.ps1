@@ -43,7 +43,7 @@ Try {
         Write-Host "Das PSWindowsUpdate-Modul ist nicht installiert. Starte die Installation..."
 
         Try {
-            Install-Module -Name PSWindowsUpdate -Force -Scope CurrentUser -ErrorAction Stop
+            Install-Module -Name PSWindowsUpdate -Force -Scope AllUsers -ErrorAction Stop
             $installedModule = Get-Module -ListAvailable -Name PSWindowsUpdate
         } Catch {
             Write-Host "Install-Module fehlgeschlagen. Wechsle zur manuellen Installation..."
