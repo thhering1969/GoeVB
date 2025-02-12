@@ -21,7 +21,7 @@ $PSDefaultParameterValues['*:Encoding'] = 'utf8'
 
 # VMware-Verbindungsdaten
 $username = 'administrator@vsphere.local'
-$password = 'ff,'
+$password = 'GoeVB2020,'
 $env:PowerCLI_SkipWelcome = "True"
 #Set-PowerCLIConfiguration -InvalidCertificateAction Ignore -Scope User -Confirm:$false -WarningAction SilentlyContinue | out-null
 $env:SUPPRESS_BANNER = $true
@@ -30,7 +30,7 @@ $env:SUPPRESS_BANNER = $true
 $BypassWednesdayCheck = $True  # Wird durch den Wert von BypassWednesdayCheck ersetzt
 
 $currentTime = Get-Date -Format 'yyyy-MM-dd_HH-mm-ss'
-$snapshotDescription = "Snapshot vom $(Get-Date -Format 'dd.MM.yyyy')"
+$snapshotDescription = "WU Snapshot vom $(Get-Date -Format 'dd.MM.yyyy')"
 
 # Zabbix API Details
 $zabbixServer = "192.168.116.114"
@@ -123,6 +123,9 @@ function Create-Snapshot {
     try {
         $vm = Get-VM -Name $vmName -ErrorAction SilentlyContinue
         if ($vm -and $vm.PowerState -eq 'PoweredOn') {
+            
+           New-Snapshot -VM $vm -Name "WU Snapshot $(Get-Date -Format 'dd.MM.yyyy HH:mm')" -Description $snapshotDescription | Out-Null
+           
             Write-Host "Snapshot erfolgreich für VM $vmName auf $vCenterServer."
             return $true
         } elseif ($vm) {
