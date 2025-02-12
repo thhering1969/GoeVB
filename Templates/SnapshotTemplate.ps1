@@ -413,7 +413,7 @@ foreach ($vmName in $vmNamesList) {
     }
 
     if (-not $snapshotCreated) {
-        Write-Host "Snapshot konnte fï¿½r VM $vmName nicht erstellt werden." -ForegroundColor Red
+        Write-Host "Snapshot konnte für VM $vmName nicht erstellt werden." -ForegroundColor Red
     }
 }
 
