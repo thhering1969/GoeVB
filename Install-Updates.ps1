@@ -29,12 +29,12 @@ if ($CheckSnapshot -match $pattern) {
         $Output += "Snapshot wurde heute erstellt!"
         $CheckSnapshot = "OK"
     } else {
-        $Output += "Snapshot wurde nicht heute erstellt, sondern am $snapshotDate."
-        $CheckSnapshot = "veraltet"
+        $Output += "Snapshot wurde nicht heute ($(Get-Date -Format 'dd.MM.yyyy')) erstellt, sondern am $snapshotDate."
+        $CheckSnapshot = "Snapshot veraltet"
     }
 } else {
     $Output += "Kein Datum im Snapshot-Status gefunden."
-    $CheckSnapshot = "fehlt"
+    $CheckSnapshot = "Snapshot fehlt"
 }
 
 # Falls der Snapshot aktuell ist, Updates ausführen und Ausgabe speichern
@@ -50,11 +50,19 @@ if ($CheckSnapshot -eq "OK") {
 } elseif ($CheckSnapshot -eq "fehlt") {
     $Output += "Snapshot fehlt"
 } else {
-    $Output += "Unbekannter Status: $CheckSnapshot"
+    $Output += "Status: $CheckSnapshot"
 }
 
-# Ausgabe in Datei speichern
-$Output | Out-File -FilePath $logFile -Encoding utf8
+
+
+# Schreibe den Inhalt in die Datei
+$Output -join "`n" | Out-File -FilePath "C:\Scripts\Zabbix\WindowsUpdate.log" -Encoding utf8 -Append
+
+
+
+
+
+
 
 # Letzte Zeile als Rückgabewert für Zabbix
 Write-Output ($Output -join "`n")
