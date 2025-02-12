@@ -1,4 +1,4 @@
-<#
+﻿<#
 Version: 1.4
 Datum: 4. Februar 2025
 Autor: GöVB
@@ -27,46 +27,53 @@ $moduleDestinationPath = "$modulePath\PSWindowsUpdate"  # Zielmodulpfad
 New-Alias write-output Write-OutputSafe
 New-Alias write-host Write-OutputSafe
 
+# Versuche das Modul direkt zu importieren
+Write-Host "Versuche, das PSWindowsUpdate-Modul zu importieren..."
+Try {
+    Import-Module PSWindowsUpdate -ErrorAction Stop
+    Write-Host "Modul erfolgreich importiert."
+} Catch {
+    Write-Host "Import-Module fehlgeschlagen. Prüfe Installation..."
 
+    # Prüfen, ob das Modul bereits installiert ist
+    Write-Host "Überprüfe, ob das PSWindowsUpdate-Modul bereits installiert ist..."
+    $installedModule = Get-Module -ListAvailable -Name PSWindowsUpdate
 
-# Prüfen, ob das Modul bereits installiert ist
-Write-Host "Überprüfe, ob das PSWindowsUpdate-Modul bereits installiert ist..."
-$installedModule = Get-Module -ListAvailable -Name PSWindowsUpdate
+    if (-not $installedModule) {
+        Write-Host "Das PSWindowsUpdate-Modul ist nicht installiert. Starte die Installation..."
 
-if (-not $installedModule) {
-    Write-Host "Das PSWindowsUpdate-Modul ist nicht installiert. Starte die Installation..."
+        Try {
+            Install-Module -Name PSWindowsUpdate -Force -Scope CurrentUser -ErrorAction Stop
+            $installedModule = Get-Module -ListAvailable -Name PSWindowsUpdate
+        } Catch {
+            Write-Host "Install-Module fehlgeschlagen. Wechsle zur manuellen Installation..."
 
-    Try {
-        Install-Module -Name PSWindowsUpdate -Force -Scope CurrentUser -ErrorAction Stop
-        $installedModule = Get-Module -ListAvailable -Name PSWindowsUpdate
-    } Catch {
-        Write-Host "Install-Module fehlgeschlagen. Wechsle zur manuellen Installation..."
+            # Prüfen, ob ZIP-Datei existiert
+            if (Test-Path $zipPath) {
+                Write-Host "Entpacke das Modul aus der ZIP-Datei..."
+                Expand-Archive -Path $zipPath -DestinationPath $extractPath -Force
 
-        # Prüfen, ob ZIP-Datei existiert
-        if (Test-Path $zipPath) {
-            Write-Host "Entpacke das Modul aus der ZIP-Datei..."
-            Expand-Archive -Path $zipPath -DestinationPath $extractPath -Force
+                # Setze den korrekten Modulpfad
+                $unpackedModulePath = "$extractPath\PSWindowsUpdate-main\PSWindowsUpdate"
 
-            # Setze den korrekten Modulpfad
-            $unpackedModulePath = "$extractPath\PSWindowsUpdate-main\PSWindowsUpdate"
-
-            if (Test-Path "$unpackedModulePath\PSWindowsUpdate.psd1") {
-                Write-Host "Kopiere das Modul in das PowerShell-Modulverzeichnis..."
-                Copy-Item -Path $unpackedModulePath -Destination $moduleDestinationPath -Recurse -Force
+                if (Test-Path "$unpackedModulePath\PSWindowsUpdate.psd1") {
+                    Write-Host "Kopiere das Modul in das PowerShell-Modulverzeichnis..."
+                    Copy-Item -Path $unpackedModulePath -Destination $moduleDestinationPath -Recurse -Force
+                } else {
+                    Write-Host "Fehler: Das entpackte Modulverzeichnis wurde nicht gefunden!"
+                    exit 1
+                }
             } else {
-                Write-Host "Fehler: Das entpackte Modulverzeichnis wurde nicht gefunden!"
+                Write-Host "Fehler: Die ZIP-Datei für PSWindowsUpdate existiert nicht!"
                 exit 1
             }
-        } else {
-            Write-Host "Fehler: Die ZIP-Datei für PSWindowsUpdate existiert nicht!"
-            exit 1
         }
     }
-}
 
-# Modul importieren
-Write-Host "Das PSWindowsUpdate-Modul ist nicht geladen. Importiere es jetzt..."
-Import-Module "$moduleDestinationPath\PSWindowsUpdate"
+    # Modul importieren
+    Write-Host "Das PSWindowsUpdate-Modul ist nicht geladen. Importiere es jetzt..."
+    Import-Module "$moduleDestinationPath\PSWindowsUpdate"
+}
 
 # Testen, ob das Modul erfolgreich geladen wurde
 if (Get-Module -Name 'PSWindowsUpdate') {
