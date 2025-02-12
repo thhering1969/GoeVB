@@ -50,6 +50,14 @@ if ($CheckSnapshot -eq "OK") {
     $Output += "Windows Update Ergebnis:"
     $Output += $updateOutput
 
+    # Überprüfen, ob ein Neustart erforderlich ist
+    $rebootStatus = Get-WURebootStatus -Silent
+    if ($rebootStatus -eq $true) {
+        $Output += "Neustart erforderlich: Ja"
+    } else {
+        $Output += "Neustart erforderlich: Nein"
+    }
+
 } elseif ($CheckSnapshot -eq "fehlt") {
     $Output += "Snapshot fehlt"
 } else {
@@ -58,16 +66,10 @@ if ($CheckSnapshot -eq "OK") {
 
 $scriptEndTime = Get-Date
 $totalDuration = $scriptEndTime - $scriptStartTime
- $Output += "Gesamtdauer des Skripts: $($totalDuration.TotalSeconds) Sekunden"
+$Output += "Gesamtdauer des Skripts: $($totalDuration.TotalSeconds) Sekunden"
 
 # Schreibe den Inhalt in die Datei
 $Output -join "`n" | Out-File -FilePath "C:\Scripts\Zabbix\WindowsUpdate.log" -Encoding utf8 -Append
-
-
-
-
-
-
 
 # Letzte Zeile als Rückgabewert für Zabbix
 Write-Output ($Output -join "`n")
