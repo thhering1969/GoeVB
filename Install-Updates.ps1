@@ -2,6 +2,9 @@ param(
     [string]$vsphereSnapshotStatus
 )
 
+# Startzeit des Skripts
+$scriptStartTime = Get-Date
+
 $OutputEncoding = [System.Text.Encoding]::UTF8
 $logFile = "C:\Scripts\Zabbix\WindowsUpdate.log"
 
@@ -34,7 +37,7 @@ if ($CheckSnapshot -match $pattern) {
     }
 } else {
     $Output += "Kein Datum im Snapshot-Status gefunden."
-    $CheckSnapshot = "Snapshot fehlt"
+    $CheckSnapshot = "fehlt"
 }
 
 # Falls der Snapshot aktuell ist, Updates ausführen und Ausgabe speichern
@@ -42,7 +45,7 @@ if ($CheckSnapshot -eq "OK") {
     $Output += "Snapshot ist aktiv."
     
     # Windows Updates abrufen & installieren
-    $updateOutput = Get-WindowsUpdate -AcceptAll -Install -IgnoreReboot -Verbose 4>&1 | Out-String
+    $updateOutput = Get-WindowsUpdate -AcceptAll -Install -IgnoreReboot -Verbose 4>&1 | Format-Table -AutoSize | Out-String
 
     $Output += "Windows Update Ergebnis:"
     $Output += $updateOutput
@@ -53,7 +56,9 @@ if ($CheckSnapshot -eq "OK") {
     $Output += "Status: $CheckSnapshot"
 }
 
-
+$scriptEndTime = Get-Date
+$totalDuration = $scriptEndTime - $scriptStartTime
+ $Output += "Gesamtdauer des Skripts: $($totalDuration.TotalSeconds) Sekunden"
 
 # Schreibe den Inhalt in die Datei
 $Output -join "`n" | Out-File -FilePath "C:\Scripts\Zabbix\WindowsUpdate.log" -Encoding utf8 -Append
