@@ -84,8 +84,20 @@ $minutes = [math]::Floor($duration.TotalSeconds / 60)
 $seconds = $duration.TotalSeconds % 60
 $Output += "Scriptlaufzeit: $minutes Minuten und $seconds Sekunden"
 
-# Schreibe den Inhalt in die Log-Datei
-$Output -join "`n" | Out-File -FilePath "C:\Scripts\Zabbix\WindowsUpdate.log" -Encoding utf8 -Append
+# Entferne unnötige Leerzeilen und trimme die Ausgabe
+$Output = $Output -join "`n" | ForEach-Object { $_.Trim() } | Where-Object { $_ -ne "" }
+
+# Finde den längsten Log-Eintrag
+$maxLength = $Output | ForEach-Object { $_.Length } | Measure-Object -Maximum | Select-Object -ExpandProperty Maximum
+
+# Erstelle einen Trenner, der genauso lang ist wie der längste Log-Eintrag
+$separator = "-" * $maxLength
+
+# Füge den Trenner am Ende der Ausgabe hinzu
+$Output += "`n$separator"
+
+# Schreibe die bearbeitete Ausgabe in die Log-Datei
+$Output | Out-File -FilePath "C:\Scripts\Zabbix\WindowsUpdate.log" -Encoding utf8 -Append
 
 # Letzte Zeile als Rückgabewert für Zabbix
 Write-Output ($Output -join "`n")
