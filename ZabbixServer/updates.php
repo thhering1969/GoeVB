@@ -134,8 +134,10 @@ function convertToUtf8($str) {
                     // Verwende den aktuellsten History-Wert (DESC-Sortierung)
                     foreach ($responseData['result'] as $history) {
                         $value = $history['value'];
+                        $latestTimestamp = $history['clock'];
                     }
-
+		    echo "<p><strong>" . convertToUtf8("Letzter Log-Eintrag vom:") . "</strong> " . convertToUtf8(date('d-m-Y H:i:s', $latestTimestamp)) . "</p>";
+                    
                     // Historien-Daten verarbeiten
                     $lines = explode("\n", $value);
                     $combinedLines = [];
