@@ -1,0 +1,132 @@
+USE susdb;
+GO
+
+-- Falls der Trigger bereits existiert, löschen
+IF OBJECT_ID('dbo.trg_UpdateOSDescription', 'TR') IS NOT NULL
+    DROP TRIGGER dbo.trg_UpdateOSDescription;
+GO
+
+CREATE TRIGGER dbo.trg_UpdateOSDescription
+ON dbo.tbComputerTargetDetail
+AFTER INSERT, UPDATE
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    -- Verhindern von rekursiven Triggeraufrufen
+    IF TRIGGER_NESTLEVEL() > 1
+        RETURN;
+
+    ;WITH ProductVersions AS (
+        -- Client-Produktversionen
+        SELECT '8'   AS ProductVersion, 6  AS OSMajorVersion, 2  AS OSMinorVersion, 9200 AS OSBuildNumber, 'RTM' AS ProductRelease
+        UNION ALL SELECT '8.1', 6, 3, 9600, 'RTM'
+        UNION ALL SELECT '10', 10, 0, 10240, '1507'
+        UNION ALL SELECT '10', 10, 0, 10586, '1511'
+        UNION ALL SELECT '10', 10, 0, 14393, '1607'
+        UNION ALL SELECT '10', 10, 0, 15063, '1703'
+        UNION ALL SELECT '10', 10, 0, 16299, '1709'
+        UNION ALL SELECT '10', 10, 0, 17134, '1803'
+        UNION ALL SELECT '10', 10, 0, 17763, '1809'
+        UNION ALL SELECT '10', 10, 0, 18362, '1903'
+        UNION ALL SELECT '10', 10, 0, 18363, '1909'
+        UNION ALL SELECT '10', 10, 0, 19041, '2004'
+        UNION ALL SELECT '10', 10, 0, 19042, '20H2'
+        UNION ALL SELECT '10', 10, 0, 19043, '21H1'
+        UNION ALL SELECT '10', 10, 0, 19044, '21H2'
+        UNION ALL SELECT '10', 10, 0, 19045, '22H2'
+        UNION ALL SELECT '11', 10, 0, 22000, '21H2'
+        UNION ALL SELECT '11', 10, 0, 22621, '22H2'
+        UNION ALL SELECT '11', 10, 0, 22631, '23H2'
+        UNION ALL SELECT '11', 10, 0, 26100, '24H2'
+        -- Server-Produktversionen
+        UNION ALL SELECT '2012',     6, 2, 9200, NULL
+        UNION ALL SELECT '2012 R2',  6, 3, 9600, NULL
+        UNION ALL SELECT '2016',     10, 0, 14393, NULL
+        UNION ALL SELECT ', version 1709', 10, 0, 16299, NULL
+        UNION ALL SELECT ', version 1803', 10, 0, 17134, NULL
+        UNION ALL SELECT '2019',     10, 0, 17763, NULL
+        UNION ALL SELECT ', version 1903', 10, 0, 18362, NULL
+        UNION ALL SELECT ', version 1909', 10, 0, 18363, NULL
+        UNION ALL SELECT ', version 2004', 10, 0, 19041, NULL
+        UNION ALL SELECT ', version 20H2', 10, 0, 19042, NULL
+        UNION ALL SELECT '2022',     10, 0, 20348, NULL
+        UNION ALL SELECT ', version 23H2', 10, 0, 25398, NULL
+        UNION ALL SELECT '2025',     10, 0, 26100, NULL
+    ),
+    OSDesc AS (
+        -- Definition der Editionen und zugehörigen NewProductType-Werte
+        SELECT 'Windows' AS ProductName, ' S'                   AS ProductEdition, 178 AS NewProductType
+        UNION ALL SELECT 'Windows', ' S N', 179
+        UNION ALL SELECT 'Windows', ' Pro N', 49
+        UNION ALL SELECT 'Windows', ' SE', 203
+        UNION ALL SELECT 'Windows', ' SE N', 202
+        UNION ALL SELECT 'Windows', ' Home', 101
+        UNION ALL SELECT 'Windows', ' Home China', 99
+        UNION ALL SELECT 'Windows', ' Home N', 98
+        UNION ALL SELECT 'Windows', ' Home Single Language', 100
+        UNION ALL SELECT 'Windows', ' Education', 121
+        UNION ALL SELECT 'Windows', ' Education N', 122
+        UNION ALL SELECT 'Windows', ' Enterprise', 4
+        UNION ALL SELECT 'Windows', ' Enterprise Evaluation', 72
+        UNION ALL SELECT 'Windows', ' Enterprise G', 171
+        UNION ALL SELECT 'Windows', ' Enterprise G N', 172
+        UNION ALL SELECT 'Windows', ' Enterprise N', 27
+        UNION ALL SELECT 'Windows', ' Enterprise N Evaluation', 84
+        UNION ALL SELECT 'Windows', ' Enterprise LTSC', 125
+        UNION ALL SELECT 'Windows', ' Enterprise LTSC Evaluation', 129
+        UNION ALL SELECT 'Windows', ' Enterprise LTSC N', 126
+        UNION ALL SELECT 'Windows', ' Enterprise LTSC N Evaluation', 130
+        UNION ALL SELECT 'Windows', ' Holographic', 135
+        UNION ALL SELECT 'Windows', ' Holographic for Business', 136
+        UNION ALL SELECT 'Windows', ' IoT Core', 123
+        UNION ALL SELECT 'Windows', ' IoT Core Commercial', 131
+        UNION ALL SELECT 'Windows', ' IoT Enterprise', 188
+        UNION ALL SELECT 'Windows', ' IoT Enterprise LTSC', 191
+        UNION ALL SELECT 'Windows', ' Mobile', 104
+        UNION ALL SELECT 'Windows', ' Mobile Enterprise', 133
+        UNION ALL SELECT 'Windows', ' Team', 119
+        UNION ALL SELECT 'Windows', ' Pro', 48
+        UNION ALL SELECT 'Windows', ' Pro Education', 164
+        UNION ALL SELECT 'Windows', ' Pro Education N', 165
+        UNION ALL SELECT 'Windows', ' Pro for Workstations', 161
+        UNION ALL SELECT 'Windows', ' Pro for Workstations N', 162
+        UNION ALL SELECT 'Windows', ' Pro China', 139
+        UNION ALL SELECT 'Windows', ' Pro Single Language', 138
+        UNION ALL SELECT 'Windows', ' Enterprise multi-session', 175
+        UNION ALL SELECT 'Windows RT', '', 97
+        UNION ALL SELECT 'Windows Server', ' Standard', 7
+        UNION ALL SELECT 'Windows Server', ' Standard Evaluation', 79
+        UNION ALL SELECT 'Windows Server', ' Datacenter', 8
+        UNION ALL SELECT 'Windows Server', ' Datacenter Evaluation', 80
+        UNION ALL SELECT 'Windows Server', ' Datacenter: Azure Edition', 407
+        UNION ALL SELECT 'Windows Server', ' Foundation', 33
+        UNION ALL SELECT 'Windows Server', ' Essentials', 50
+        UNION ALL SELECT 'Microsoft Hyper-V Server', '', 42
+    )
+    UPDATE T
+    SET T.OSDescription =
+        CONCAT(
+            ODS.ProductName, ' ',
+            PV.ProductVersion, ' ',
+            ODS.ProductEdition,
+            CASE WHEN PV.ProductRelease IS NOT NULL THEN CONCAT(' ', PV.ProductRelease) ELSE '' END
+        )
+    FROM dbo.tbComputerTargetDetail T
+    INNER JOIN inserted i ON T.TargetID = i.TargetID
+    INNER JOIN ProductVersions PV
+        ON T.OSMajorVersion = PV.OSMajorVersion
+       AND T.OSMinorVersion = PV.OSMinorVersion
+       AND T.OSBuildNumber = PV.OSBuildNumber
+    INNER JOIN OSDesc ODS
+        ON T.NewProductType = ODS.NewProductType
+    WHERE (T.OSDescription <>
+         CONCAT(
+            ODS.ProductName, ' ',
+            PV.ProductVersion, ' ',
+            ODS.ProductEdition,
+            CASE WHEN PV.ProductRelease IS NOT NULL THEN CONCAT(' ', PV.ProductRelease) ELSE '' END
+         )
+         OR T.OSDescription IS NULL);
+END;
+GO
