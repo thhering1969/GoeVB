@@ -1,0 +1,124 @@
+{
+  "version": 3,
+  "targets": {
+    "net9.0-windows7.0": {
+      "OS-SSH.NET/2024.0.0": {
+        "type": "package",
+        "compile": {
+          "lib/net8.0/Renci.OS.SshNet.dll": {
+            "related": ".xml"
+          }
+        },
+        "runtime": {
+          "lib/net8.0/Renci.OS.SshNet.dll": {
+            "related": ".xml"
+          }
+        }
+      }
+    }
+  },
+  "libraries": {
+    "OS-SSH.NET/2024.0.0": {
+      "sha512": "rMMZNaJ6+OXuQyYu5xmCB2AincSniDNe81FmCBNeAO4LwZtg2/Jm0PqMNAf0ofsVGByLlIFHs5ff5P+yGy5+kQ==",
+      "type": "package",
+      "path": "os-ssh.net/2024.0.0",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "README.md",
+        "SS-NET-icon-h500.png",
+        "lib/net462/Renci.OS.SshNet.dll",
+        "lib/net462/Renci.OS.SshNet.xml",
+        "lib/net6.0/Renci.OS.SshNet.dll",
+        "lib/net6.0/Renci.OS.SshNet.xml",
+        "lib/net7.0/Renci.OS.SshNet.dll",
+        "lib/net7.0/Renci.OS.SshNet.xml",
+        "lib/net8.0/Renci.OS.SshNet.dll",
+        "lib/net8.0/Renci.OS.SshNet.xml",
+        "lib/netstandard2.0/Renci.OS.SshNet.dll",
+        "lib/netstandard2.0/Renci.OS.SshNet.xml",
+        "lib/netstandard2.1/Renci.OS.SshNet.dll",
+        "lib/netstandard2.1/Renci.OS.SshNet.xml",
+        "os-ssh.net.2024.0.0.nupkg.sha512",
+        "os-ssh.net.nuspec"
+      ]
+    }
+  },
+  "projectFileDependencyGroups": {
+    "net9.0-windows7.0": [
+      "OS-SSH.NET >= 2024.0.0"
+    ]
+  },
+  "packageFolders": {
+    "C:\\Users\\thorsten.hering\\.nuget\\packages\\": {}
+  },
+  "project": {
+    "version": "1.0.0",
+    "restore": {
+      "projectUniqueName": "C:\\Scripts\\OtoboAD\\OtoboAD.csproj",
+      "projectName": "OtoboAD",
+      "projectPath": "C:\\Scripts\\OtoboAD\\OtoboAD.csproj",
+      "packagesPath": "C:\\Users\\thorsten.hering\\.nuget\\packages\\",
+      "outputPath": "C:\\Scripts\\OtoboAD\\obj\\",
+      "projectStyle": "PackageReference",
+      "configFilePaths": [
+        "C:\\Users\\thorsten.hering\\AppData\\Roaming\\NuGet\\NuGet.Config"
+      ],
+      "originalTargetFrameworks": [
+        "net9.0-windows"
+      ],
+      "sources": {
+        "https://api.nuget.org/v3/index.json": {},
+        "https://www.nuget.org/api/v2": {}
+      },
+      "frameworks": {
+        "net9.0-windows7.0": {
+          "targetAlias": "net9.0-windows",
+          "projectReferences": {}
+        }
+      },
+      "warningProperties": {
+        "warnAsError": [
+          "NU1605"
+        ]
+      },
+      "restoreAuditProperties": {
+        "enableAudit": "true",
+        "auditLevel": "low",
+        "auditMode": "direct"
+      },
+      "SdkAnalysisLevel": "9.0.200"
+    },
+    "frameworks": {
+      "net9.0-windows7.0": {
+        "targetAlias": "net9.0-windows",
+        "dependencies": {
+          "OS-SSH.NET": {
+            "target": "Package",
+            "version": "[2024.0.0, )"
+          }
+        },
+        "imports": [
+          "net461",
+          "net462",
+          "net47",
+          "net471",
+          "net472",
+          "net48",
+          "net481"
+        ],
+        "assetTargetFallback": true,
+        "warn": true,
+        "frameworkReferences": {
+          "Microsoft.NETCore.App": {
+            "privateAssets": "all"
+          },
+          "Microsoft.WindowsDesktop.App.WindowsForms": {
+            "privateAssets": "none"
+          }
+        },
+        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.202/PortableRuntimeIdentifierGraph.json"
+      }
+    }
+  }
+}

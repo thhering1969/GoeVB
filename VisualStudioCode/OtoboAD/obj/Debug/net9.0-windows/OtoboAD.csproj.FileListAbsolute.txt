@@ -1,0 +1,17 @@
+C:\Scripts\OtoboAD\obj\Debug\net9.0-windows\OtoboAD.csproj.AssemblyReference.cache
+C:\Scripts\OtoboAD\obj\Debug\net9.0-windows\OtoboAD.GeneratedMSBuildEditorConfig.editorconfig
+C:\Scripts\OtoboAD\obj\Debug\net9.0-windows\OtoboAD.AssemblyInfoInputs.cache
+C:\Scripts\OtoboAD\obj\Debug\net9.0-windows\OtoboAD.AssemblyInfo.cs
+C:\Scripts\OtoboAD\obj\Debug\net9.0-windows\OtoboAD.csproj.CoreCompileInputs.cache
+C:\Scripts\OtoboAD\bin\Debug\net9.0-windows\OtoboAD.exe
+C:\Scripts\OtoboAD\bin\Debug\net9.0-windows\OtoboAD.deps.json
+C:\Scripts\OtoboAD\bin\Debug\net9.0-windows\OtoboAD.runtimeconfig.json
+C:\Scripts\OtoboAD\bin\Debug\net9.0-windows\OtoboAD.dll
+C:\Scripts\OtoboAD\bin\Debug\net9.0-windows\OtoboAD.pdb
+C:\Scripts\OtoboAD\bin\Debug\net9.0-windows\Renci.OS.SshNet.dll
+C:\Scripts\OtoboAD\obj\Debug\net9.0-windows\OtoboAD.csproj.Up2Date
+C:\Scripts\OtoboAD\obj\Debug\net9.0-windows\OtoboAD.dll
+C:\Scripts\OtoboAD\obj\Debug\net9.0-windows\refint\OtoboAD.dll
+C:\Scripts\OtoboAD\obj\Debug\net9.0-windows\OtoboAD.pdb
+C:\Scripts\OtoboAD\obj\Debug\net9.0-windows\OtoboAD.genruntimeconfig.cache
+C:\Scripts\OtoboAD\obj\Debug\net9.0-windows\ref\OtoboAD.dll
