@@ -15,3 +15,15 @@ C:\Scripts\OtoboAD\obj\Debug\net9.0-windows\refint\OtoboAD.dll
 C:\Scripts\OtoboAD\obj\Debug\net9.0-windows\OtoboAD.pdb
 C:\Scripts\OtoboAD\obj\Debug\net9.0-windows\OtoboAD.genruntimeconfig.cache
 C:\Scripts\OtoboAD\obj\Debug\net9.0-windows\ref\OtoboAD.dll
+C:\Scripts\OtoboAD\bin\Debug\net9.0-windows\System.Configuration.ConfigurationManager.dll
+C:\Scripts\OtoboAD\bin\Debug\net9.0-windows\System.Diagnostics.EventLog.dll
+C:\Scripts\OtoboAD\bin\Debug\net9.0-windows\System.DirectoryServices.dll
+C:\Scripts\OtoboAD\bin\Debug\net9.0-windows\System.DirectoryServices.AccountManagement.dll
+C:\Scripts\OtoboAD\bin\Debug\net9.0-windows\System.DirectoryServices.Protocols.dll
+C:\Scripts\OtoboAD\bin\Debug\net9.0-windows\System.Security.Cryptography.ProtectedData.dll
+C:\Scripts\OtoboAD\bin\Debug\net9.0-windows\runtimes\win\lib\net9.0\System.Diagnostics.EventLog.dll
+C:\Scripts\OtoboAD\bin\Debug\net9.0-windows\runtimes\win\lib\net9.0\System.DirectoryServices.dll
+C:\Scripts\OtoboAD\bin\Debug\net9.0-windows\runtimes\win\lib\net9.0\System.DirectoryServices.AccountManagement.dll
+C:\Scripts\OtoboAD\bin\Debug\net9.0-windows\runtimes\linux\lib\net9.0\System.DirectoryServices.Protocols.dll
+C:\Scripts\OtoboAD\bin\Debug\net9.0-windows\runtimes\osx\lib\net9.0\System.DirectoryServices.Protocols.dll
+C:\Scripts\OtoboAD\bin\Debug\net9.0-windows\runtimes\win\lib\net9.0\System.DirectoryServices.Protocols.dll

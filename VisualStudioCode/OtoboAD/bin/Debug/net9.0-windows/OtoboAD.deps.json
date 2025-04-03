@@ -8,7 +8,8 @@
     ".NETCoreApp,Version=v9.0": {
       "OtoboAD/1.0.0": {
         "dependencies": {
-          "OS-SSH.NET": "2024.0.0"
+          "OS-SSH.NET": "2024.0.0",
+          "System.DirectoryServices.AccountManagement": "9.0.3"
         },
         "runtime": {
           "OtoboAD.dll": {}
@@ -19,6 +20,107 @@
           "lib/net8.0/Renci.OS.SshNet.dll": {
             "assemblyVersion": "2024.0.0.0",
             "fileVersion": "2024.0.0.0"
+          }
+        }
+      },
+      "System.Configuration.ConfigurationManager/9.0.3": {
+        "dependencies": {
+          "System.Diagnostics.EventLog": "9.0.3",
+          "System.Security.Cryptography.ProtectedData": "9.0.3"
+        },
+        "runtime": {
+          "lib/net9.0/System.Configuration.ConfigurationManager.dll": {
+            "assemblyVersion": "9.0.0.0",
+            "fileVersion": "9.0.325.11113"
+          }
+        }
+      },
+      "System.Diagnostics.EventLog/9.0.3": {
+        "runtime": {
+          "lib/net9.0/System.Diagnostics.EventLog.dll": {
+            "assemblyVersion": "9.0.0.0",
+            "fileVersion": "9.0.325.11113"
+          }
+        },
+        "runtimeTargets": {
+          "runtimes/win/lib/net9.0/System.Diagnostics.EventLog.dll": {
+            "rid": "win",
+            "assetType": "runtime",
+            "assemblyVersion": "9.0.0.0",
+            "fileVersion": "9.0.325.11113"
+          }
+        }
+      },
+      "System.DirectoryServices/9.0.3": {
+        "runtime": {
+          "lib/net9.0/System.DirectoryServices.dll": {
+            "assemblyVersion": "9.0.0.0",
+            "fileVersion": "9.0.325.11113"
+          }
+        },
+        "runtimeTargets": {
+          "runtimes/win/lib/net9.0/System.DirectoryServices.dll": {
+            "rid": "win",
+            "assetType": "runtime",
+            "assemblyVersion": "9.0.0.0",
+            "fileVersion": "9.0.325.11113"
+          }
+        }
+      },
+      "System.DirectoryServices.AccountManagement/9.0.3": {
+        "dependencies": {
+          "System.Configuration.ConfigurationManager": "9.0.3",
+          "System.DirectoryServices": "9.0.3",
+          "System.DirectoryServices.Protocols": "9.0.3"
+        },
+        "runtime": {
+          "lib/net9.0/System.DirectoryServices.AccountManagement.dll": {
+            "assemblyVersion": "9.0.0.3",
+            "fileVersion": "9.0.325.11113"
+          }
+        },
+        "runtimeTargets": {
+          "runtimes/win/lib/net9.0/System.DirectoryServices.AccountManagement.dll": {
+            "rid": "win",
+            "assetType": "runtime",
+            "assemblyVersion": "9.0.0.3",
+            "fileVersion": "9.0.325.11113"
+          }
+        }
+      },
+      "System.DirectoryServices.Protocols/9.0.3": {
+        "runtime": {
+          "lib/net9.0/System.DirectoryServices.Protocols.dll": {
+            "assemblyVersion": "9.0.0.3",
+            "fileVersion": "9.0.325.11113"
+          }
+        },
+        "runtimeTargets": {
+          "runtimes/linux/lib/net9.0/System.DirectoryServices.Protocols.dll": {
+            "rid": "linux",
+            "assetType": "runtime",
+            "assemblyVersion": "9.0.0.3",
+            "fileVersion": "9.0.325.11113"
+          },
+          "runtimes/osx/lib/net9.0/System.DirectoryServices.Protocols.dll": {
+            "rid": "osx",
+            "assetType": "runtime",
+            "assemblyVersion": "9.0.0.3",
+            "fileVersion": "9.0.325.11113"
+          },
+          "runtimes/win/lib/net9.0/System.DirectoryServices.Protocols.dll": {
+            "rid": "win",
+            "assetType": "runtime",
+            "assemblyVersion": "9.0.0.3",
+            "fileVersion": "9.0.325.11113"
+          }
+        }
+      },
+      "System.Security.Cryptography.ProtectedData/9.0.3": {
+        "runtime": {
+          "lib/net9.0/System.Security.Cryptography.ProtectedData.dll": {
+            "assemblyVersion": "9.0.0.0",
+            "fileVersion": "9.0.325.11113"
           }
         }
       }
@@ -36,6 +138,48 @@
       "sha512": "sha512-rMMZNaJ6+OXuQyYu5xmCB2AincSniDNe81FmCBNeAO4LwZtg2/Jm0PqMNAf0ofsVGByLlIFHs5ff5P+yGy5+kQ==",
       "path": "os-ssh.net/2024.0.0",
       "hashPath": "os-ssh.net.2024.0.0.nupkg.sha512"
+    },
+    "System.Configuration.ConfigurationManager/9.0.3": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-0kw80ykL/iFhNtFbPpjxIavmCk7/l6MqQwNSNhEoSNuI9C82ZZ251thzQZ/btHut21Y2G9M+amQY1K5bhaAjKg==",
+      "path": "system.configuration.configurationmanager/9.0.3",
+      "hashPath": "system.configuration.configurationmanager.9.0.3.nupkg.sha512"
+    },
+    "System.Diagnostics.EventLog/9.0.3": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-0nDJBZ06DVdTG2vvCZ4XjazLVaFawdT0pnji23ISX8I8fEOlRJyzH2I0kWiAbCtFwry2Zir4qE4l/GStLATfFw==",
+      "path": "system.diagnostics.eventlog/9.0.3",
+      "hashPath": "system.diagnostics.eventlog.9.0.3.nupkg.sha512"
+    },
+    "System.DirectoryServices/9.0.3": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-tghYc6d+7losoxDm+rr2mgaDvmJgfPyCe3qk+0ZNOgpTYwMnhDrYrX+IRB+BD90+yaPr2L6MQyrRCFpU578iuQ==",
+      "path": "system.directoryservices/9.0.3",
+      "hashPath": "system.directoryservices.9.0.3.nupkg.sha512"
+    },
+    "System.DirectoryServices.AccountManagement/9.0.3": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-q0OsD5IFZ9cQT7zRhRiouneH3sS1ZKrqEK6UIrKoUYld9Jl0L+nq3CG+cjNJxK0C3oJZmz6zaqJHtdn4rWnO7g==",
+      "path": "system.directoryservices.accountmanagement/9.0.3",
+      "hashPath": "system.directoryservices.accountmanagement.9.0.3.nupkg.sha512"
+    },
+    "System.DirectoryServices.Protocols/9.0.3": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-tv8wtrHOWQGMl3zuYsVk41mo4eMfd6tatVTwnFMfIEG+65TKd2Z6fjzUTV0FUhIV6/3mv3KflNKLSiQJnu+AMg==",
+      "path": "system.directoryservices.protocols/9.0.3",
+      "hashPath": "system.directoryservices.protocols.9.0.3.nupkg.sha512"
+    },
+    "System.Security.Cryptography.ProtectedData/9.0.3": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-4PAwR9l3rhAESfymptisnO2KWpHmiTnKxovnREqmiY4BEakXD2ahQU4/NO0vzEarMw8RGzwpmWoiHwvL/waHfQ==",
+      "path": "system.security.cryptography.protecteddata/9.0.3",
+      "hashPath": "system.security.cryptography.protecteddata.9.0.3.nupkg.sha512"
     }
   }
 }

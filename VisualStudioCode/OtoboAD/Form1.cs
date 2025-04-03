@@ -1,7 +1,9 @@
-using Renci.OS.SshNet;  // Verwende den korrekten Namespace für OS-SSH.NET
+using Renci.OS.SshNet;
 using System;
 using System.Windows.Forms;
-using System.Diagnostics; // Für Debug-Ausgaben
+using System.DirectoryServices.AccountManagement; // AD-Abfragen
+using System.Diagnostics; // Debug-Ausgaben
+using System.Collections.Generic;
 
 namespace OtoboAD
 {
@@ -10,70 +12,123 @@ namespace OtoboAD
         public Form1()
         {
             InitializeComponent();
-            // Setze Standardwerte für SSH-Verbindung und Otobo-Benutzerdaten
             txtHost.Text = "192.168.116.26";  // IP der VM
-            txtUser.Text = "root";            // SSH-Benutzername (für die VM)
-            txtPassword.Text = "";            // Passwort: vom Benutzer eingeben lassen
-            txtFirstName.Text = "John";       // Standard-Vorname
-            txtLastName.Text = "Doe";         // Standard-Nachname
-            txtEmail.Text = "johndoe@goevb.de"; // Standard E-Mail-Adresse
+            txtUser.Text = "root";            // SSH-Benutzername
+            txtPassword.Text = "";            // Passwort muss eingegeben werden
+
+            LoadADMembers();
+        }
+
+        private void LoadADMembers()
+        {
+            try
+            {
+                using (PrincipalContext ctx = new PrincipalContext(ContextType.Domain, "goevb.de", "OU=OTOBO,DC=goevb,DC=de"))
+                {
+                    GroupPrincipal group = GroupPrincipal.FindByIdentity(ctx, "OTOBOAgentUser");
+                    if (group != null)
+                    {
+                        foreach (Principal p in group.GetMembers())
+                        {
+                            checkedListBoxADMembers.Items.Add(p.SamAccountName, false);
+                        }
+                    }
+                    else
+                    {
+                        MessageBox.Show("Die Gruppe 'OTOBOAgentUser' wurde nicht gefunden.");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Fehler beim Laden der AD-Mitglieder: " + ex.Message);
+            }
+        }
+
+        private void checkedListBoxADMembers_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if (checkedListBoxADMembers.SelectedItem != null)
+            {
+                string selectedUser = checkedListBoxADMembers.SelectedItem.ToString();
+
+                try
+                {
+                    using (PrincipalContext ctx = new PrincipalContext(ContextType.Domain, "goevb.de"))
+                    {
+                        UserPrincipal user = UserPrincipal.FindByIdentity(ctx, selectedUser);
+                        if (user != null)
+                        {
+                            lblDetailFirstName.Text = "Vorname: " + (user.GivenName ?? "Unbekannt");
+                            lblDetailLastName.Text = "Nachname: " + (user.Surname ?? "Unbekannt");
+                            lblDetailEmail.Text = "Email: " + (user.EmailAddress ?? "Keine E-Mail");
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show("Fehler beim Abrufen der Benutzerdetails: " + ex.Message);
+                }
+            }
         }
 
         private void btnExecute_Click(object sender, EventArgs e)
         {
-            // Werte aus den Textfeldern holen
             string host = txtHost.Text;
             string sshUser = txtUser.Text;
             string sshPassword = txtPassword.Text;
-            string firstName = txtFirstName.Text;
-            string lastName = txtLastName.Text;
-            string email = txtEmail.Text;
 
-            // Erzeuge den Benutzernamen für Otobo aus Vor- und Nachname (als Beispiel)
-            string otoboUser = (firstName + lastName).ToLower();
+            List<string> selectedUsers = new List<string>();
 
-            // Erstelle den Befehl, der im Docker-Container ausgeführt wird.
-            // Hier wird das Otobo-Console-Skript per Perl ausgeführt, um einen Agenten anzulegen.
-            string command = $"docker exec -i otobo-daemon-1 perl /opt/otobo/bin/otobo.Console.pl Admin::User::Add --user-name {otoboUser} --first-name {firstName} --last-name {lastName} --email-address {email}";
+            foreach (var item in checkedListBoxADMembers.CheckedItems)
+            {
+                selectedUsers.Add(item.ToString());
+            }
+
+            if (selectedUsers.Count == 0)
+            {
+                MessageBox.Show("Bitte wählen Sie mindestens einen Benutzer aus.");
+                return;
+            }
 
             try
             {
-                // SSH-Verbindung zur VM aufbauen
                 using (var client = new SshClient(host, sshUser, sshPassword))
                 {
-                    client.HostKeyReceived += (s, eArgs) =>
-                    {
-                        // Alle Host-Schlüssel ohne Überprüfung akzeptieren (nur Testumgebung!)
-                        eArgs.CanTrust = true;
-                    };
-
+                    client.HostKeyReceived += (s, eArgs) => { eArgs.CanTrust = true; };
                     client.KeepAliveInterval = TimeSpan.FromSeconds(30);
                     client.Connect();
 
                     if (client.IsConnected)
                     {
-                        // Führe den Docker-Befehl im Container aus
-                        var cmd = client.RunCommand(command);
-                        string result = cmd.Result;
-                        string error = cmd.Error;
+                        foreach (string user in selectedUsers)
+                        {
+                            using (PrincipalContext ctx = new PrincipalContext(ContextType.Domain, "goevb.de"))
+                            {
+                                UserPrincipal adUser = UserPrincipal.FindByIdentity(ctx, user);
+                                if (adUser != null)
+                                {
+                                    string firstName = adUser.GivenName ?? "Unbekannt";
+                                    string lastName = adUser.Surname ?? "Unbekannt";
+                                    string email = adUser.EmailAddress ?? $"{user}@goevb.de";
 
-                        // Debug-Ausgabe in der Debug-Konsole
-                        Debug.WriteLine($"Command executed: {command}");
-                        Debug.WriteLine($"Result: {result}");
-                        Debug.WriteLine($"Error: {error}");
+                                    string command = $"docker exec -i otobo-daemon-1 perl /opt/otobo/bin/otobo.Console.pl Admin::User::Add " +
+                                                     $"--user-name {user} --first-name \"{firstName}\" --last-name \"{lastName}\" --email-address \"{email}\"";
 
-                        // Zeige entweder die Fehlermeldung oder das Ergebnis an
-                        if (!string.IsNullOrEmpty(error))
-                        {
-                            MessageBox.Show("Fehler: " + error);
-                        }
-                        else if (!string.IsNullOrEmpty(result))
-                        {
-                            MessageBox.Show("Ergebnis: " + result);
-                        }
-                        else
-                        {
-                            MessageBox.Show("Keine Ausgabe und kein Fehler vom Server.");
+                                    var cmd = client.RunCommand(command);
+                                    Debug.WriteLine($"Befehl: {command}");
+                                    Debug.WriteLine($"Ergebnis: {cmd.Result}");
+                                    Debug.WriteLine($"Fehler: {cmd.Error}");
+
+                                    if (!string.IsNullOrEmpty(cmd.Error))
+                                    {
+                                        MessageBox.Show($"Fehler beim Anlegen von {user}: {cmd.Error}");
+                                    }
+                                    else
+                                    {
+                                        MessageBox.Show($"Benutzer {user} erfolgreich angelegt.");
+                                    }
+                                }
+                            }
                         }
                     }
                     else

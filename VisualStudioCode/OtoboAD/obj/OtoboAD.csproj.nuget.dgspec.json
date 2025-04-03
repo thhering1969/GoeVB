@@ -48,6 +48,10 @@
             "OS-SSH.NET": {
               "target": "Package",
               "version": "[2024.0.0, )"
+            },
+            "System.DirectoryServices.AccountManagement": {
+              "target": "Package",
+              "version": "[9.0.3, )"
             }
           },
           "imports": [

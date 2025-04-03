@@ -10,6 +10,7 @@
 
   <ItemGroup>
     <PackageReference Include="OS-SSH.NET" Version="2024.0.0" />
+    <PackageReference Include="System.DirectoryServices.AccountManagement" Version="9.0.3" />
   </ItemGroup>
 
 </Project>
