@@ -1,6 +1,6 @@
 # CombinedScript.ps1
 #---------------------------------------------------------------
-# Setzt eine statische IP (aus 192.168.116.1–3 per 3-fachem Ping-Test), 
+# Setzt eine statische IP (aus 192.168.116.1–3 per 3-fachem Ping-Test mit Fehlerbehandlung), 
 # aktiviert Office per MAK online und stellt die IP-Konfiguration 
 # wieder her (nur, wenn Teil 1 gelaufen ist).
 # Usage: powershell.exe -ExecutionPolicy Bypass -File CombinedScript.ps1 -OfficeKey YOUR-KEY-HERE
@@ -22,14 +22,14 @@ $skipToActivation = $false
 Write-Host '## Teil 1: Statische IP setzen und Backup anlegen' -ForegroundColor Cyan
 
 # Adapter ermitteln
-$netCfg = Get-NetIPConfiguration |
-    Where-Object { $_.IPv4DefaultGateway.NextHop } |
-    Where-Object { -not (Get-NetAdapter -InterfaceIndex $_.InterfaceIndex).Virtual } |
-    Select-Object -First 1
+$netCfg = Get-NetIPConfiguration `
+    | Where-Object { $_.IPv4DefaultGateway.NextHop } `
+    | Where-Object { -not (Get-NetAdapter -InterfaceIndex $_.InterfaceIndex).Virtual } `
+    | Select-Object -First 1
 if (-not $netCfg) {
-    $netCfg = Get-NetAdapter |
-        Where-Object { $_.Status -eq 'Up' -and -not $_.Virtual } |
-        Select-Object -First 1
+    $netCfg = Get-NetAdapter `
+        | Where-Object { $_.Status -eq 'Up' -and -not $_.Virtual } `
+        | Select-Object -First 1
     Write-Host 'Kein Gateway-Adapter gefunden, verwende ersten physischen Up-Adapter' -ForegroundColor Yellow
 } else {
     Write-Host 'Gefundener physischer Adapter via DefaultGateway' -ForegroundColor Green
@@ -41,7 +41,7 @@ Write-Host "Adapter: $($adapter.Name) (Index $ifaceIdx)"
 # Prüfen, ob bereits eine IP aus 192.168.116.1–3 konfiguriert ist
 $staticBase  = '192.168.116'
 $poolIPs     = 1..3 | ForEach-Object { "$staticBase.$_" }
-$existingIPs = Get-NetIPAddress -InterfaceIndex $ifaceIdx -AddressFamily IPv4 |
+$existingIPs = (Get-NetIPAddress -InterfaceIndex $ifaceIdx -AddressFamily IPv4 -ErrorAction SilentlyContinue) |
                Select-Object -ExpandProperty IPAddress
 
 if ($existingIPs | Where-Object { $poolIPs -contains $_ }) {
@@ -63,9 +63,7 @@ if (-not $skipToActivation) {
     $props = 'EnableDHCP','IPAddress','SubnetMask','DefaultGateway','NameServer'
     foreach ($p in $props) {
         $v = Get-ItemPropertyValue -Path $src -Name $p -ErrorAction SilentlyContinue
-        if ($null -ne $v) {
-            Set-ItemProperty -Path $dst -Name $p -Value $v
-        }
+        if ($null -ne $v) { Set-ItemProperty -Path $dst -Name $p -Value $v }
     }
     Write-Host 'Backup abgeschlossen.' -ForegroundColor Green
 
@@ -73,17 +71,23 @@ if (-not $skipToActivation) {
     Write-Host 'Deaktiviere DHCP und lösche alte IP-/Gateway-Einträge …' -ForegroundColor Cyan
     Set-NetIPInterface -InterfaceIndex $ifaceIdx -Dhcp Disabled
     foreach ($store in 'ActiveStore','PersistentStore') {
-        Get-NetIPAddress -InterfaceIndex $ifaceIdx -AddressFamily IPv4 -PolicyStore $store |
-            Remove-NetIPAddress -Confirm:$false
-        Get-NetRoute -InterfaceIndex $ifaceIdx -DestinationPrefix '0.0.0.0/0' -PolicyStore $store |
-            Remove-NetRoute -Confirm:$false
+        Get-NetIPAddress -InterfaceIndex $ifaceIdx -AddressFamily IPv4 -PolicyStore $store `
+            -ErrorAction SilentlyContinue | Remove-NetIPAddress -Confirm:$false -ErrorAction SilentlyContinue
+        Get-NetRoute -InterfaceIndex $ifaceIdx -DestinationPrefix '0.0.0.0/0' -PolicyStore $store `
+            -ErrorAction SilentlyContinue | Remove-NetRoute -Confirm:$false -ErrorAction SilentlyContinue
     }
 
-    # Auswahl einer freien IP per 3-fachem Ping-Test
+    # Auswahl einer freien IP per 3-fachem Ping-Test mit Fehlerbehandlung
     Write-Host 'Suche freie IP aus 192.168.116.1–3 per Ping…' -ForegroundColor Cyan
     $chosen = $null
     foreach ($cand in (Get-Random -InputObject $poolIPs -Count $poolIPs.Length)) {
-        if (-not (Test-Connection -ComputerName $cand -Count 3 -Quiet)) {
+        $responded = $false
+        try {
+            $responded = Test-Connection -ComputerName $cand -Count 3 -Quiet -ErrorAction Stop
+        } catch {
+            $responded = $false
+        }
+        if (-not $responded) {
             $chosen = $cand
             break
         }
@@ -111,7 +115,6 @@ if (-not $skipToActivation) {
 
 # --- Teil 2: Office-Aktivierung (immer) ---
 Write-Host '## Teil 2: Office aktivieren' -ForegroundColor Cyan
-# Suche ospp.vbs im Office-Installationsverzeichnis
 $paths = @(
     "$env:ProgramFiles\Microsoft Office",
     "$env:ProgramFiles(x86)\Microsoft Office"
@@ -124,10 +127,9 @@ if (-not $osppFile) {
     exit 1
 }
 $officePath = $osppFile.DirectoryName
-Write-Host "Gefundener Office-Pfad: $officePath"
 Push-Location $officePath
 
-# Warte auf Erreichbarkeit des Aktivierungs-Servers (Port 443) mit Timeout 60 Sekunden
+# Korrigierte do…while-Schleife mit ordentlicher TotalSeconds-Auswertung
 Write-Host 'Warte auf TCP Port 443 von activation.sls.microsoft.com (max. 60 s)...' -NoNewline
 $startTime = Get-Date
 do {
@@ -137,13 +139,13 @@ do {
         break
     }
     Start-Sleep -Seconds 5
-} while ((Get-Date) - $startTime).TotalSeconds -lt 60
+} while (((Get-Date) - $startTime).TotalSeconds -lt 60)
+
 if (-not $result.TcpTestSucceeded) {
-    Write-Error 'Timeout: Aktivierungs-Server nicht innerhalb von 60 Sekunden erreichbar.'
+    Write-Error 'Timeout: Aktivierungs-Server nicht erreichbar.'
     exit 1
 }
 
-# Online-Aktivierung durchführen
 Write-Host 'Starte Online-Aktivierung' -ForegroundColor Cyan
 cscript ospp.vbs /act
 cscript ospp.vbs /dstatus
@@ -177,10 +179,10 @@ if (-not $skipToActivation) {
             $gw   = Get-ItemPropertyValue -Path $dst -Name DefaultGateway
             $dns  = Get-ItemPropertyValue -Path $dst -Name NameServer
             foreach ($store in 'ActiveStore','PersistentStore') {
-                Get-NetIPAddress -InterfaceIndex $idx -AddressFamily IPv4 -PolicyStore $store |
-                    Remove-NetIPAddress -Confirm:$false
-                Get-NetRoute -InterfaceIndex $idx -DestinationPrefix '0.0.0.0/0' -PolicyStore $store |
-                    Remove-NetRoute -Confirm:$false
+                Get-NetIPAddress -InterfaceIndex $idx -AddressFamily IPv4 -PolicyStore $store `
+                    -ErrorAction SilentlyContinue | Remove-NetIPAddress -Confirm:$false -ErrorAction SilentlyContinue
+                Get-NetRoute -InterfaceIndex $idx -DestinationPrefix '0.0.0.0/0' -PolicyStore $store `
+                    -ErrorAction SilentlyContinue | Remove-NetRoute -Confirm:$false -ErrorAction SilentlyContinue
             }
             function Get-PrefixLength { param($m)
                 return ((($m -split '\.') |
