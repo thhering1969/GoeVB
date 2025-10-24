@@ -1,25 +1,39 @@
 USE [SUSDB];
 GO
 
--- 1. Bestehenden Trigger prüfen und löschen
+-- 1. Bestehenden Trigger prüfen und löschen (Verwenden des neuen Namens)
+IF EXISTS (SELECT * FROM sys.triggers WHERE name = 'trg_UpdateOSDescriptionOnInsertOrUpdate')
+BEGIN
+    DROP TRIGGER [dbo].[trg_UpdateOSDescriptionOnInsertOrUpdate];
+    PRINT 'Bestehender Trigger [trg_UpdateOSDescriptionOnInsertOrUpdate] wurde gelöscht.';
+END
+-- Löschen Sie auch den alten Trigger-Namen, falls er noch existiert
 IF EXISTS (SELECT * FROM sys.triggers WHERE name = 'trg_UpdateOSDescriptionOnInsert')
 BEGIN
     DROP TRIGGER [dbo].[trg_UpdateOSDescriptionOnInsert];
-    PRINT 'Bestehender Trigger [trg_UpdateOSDescriptionOnInsert] wurde gelöscht.';
+    PRINT 'Alter Trigger [trg_UpdateOSDescriptionOnInsert] wurde gelöscht.';
 END
 GO
 
-PRINT 'Erstelle Trigger [trg_UpdateOSDescriptionOnInsertOrUpdate]...';
+PRINT 'Erstelle Trigger [trg_UpdateOSDescriptionOnInsertOrUpdate] mit Rekursionsschutz...';
 GO
 
 -- 2. NEUE Trigger-Definition: AFTER INSERT, UPDATE
 CREATE TRIGGER [dbo].[trg_UpdateOSDescriptionOnInsertOrUpdate]
    ON  [dbo].[tbComputerTargetDetail]
-   AFTER INSERT, UPDATE 
+   AFTER INSERT, UPDATE 
 AS 
 BEGIN
     -- Verhindert, dass "rows affected"-Meldungen an die WSUS-Anwendung gesendet werden
     SET NOCOUNT ON;
+
+    -- ***************************************************************
+    -- ** REKURSIONSSCHUTZ **
+    -- Verhindert, dass der Trigger sich selbst durch das interne UPDATE
+    -- auf derselben Tabelle erneut auslöst und das Schachtelungslimit erreicht.
+    IF TRIGGER_NESTLEVEL() > 1 
+        RETURN;
+    -- ***************************************************************
 
     -- Definieren Sie alle Produktversionen und Editionszuordnungen (Wird als CTE beibehalten)
     WITH VersionMap (ProductName, OSMajorVersion, OSMinorVersion, OSBuildNumber, ProductVersion, ProductRelease) AS (
